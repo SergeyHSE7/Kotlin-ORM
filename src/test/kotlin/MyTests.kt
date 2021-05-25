@@ -1,14 +1,13 @@
-import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.*
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import org.atteo.evo.inflector.English
 import org.postgresql.util.PSQLException
 import statements.delete
 import statements.update
 import utils.Case
-import utils.getEntity
-import utils.transformCase
+import utils.*
 
 /*val database: Database = Database(
     url = "jdbc:postgresql://localhost:5432/FinAssistant",
@@ -116,8 +115,15 @@ class MyTests : FreeSpec({
         }
         "Many To Many check" {
             val human = HumanTable[1]!!
-            println(human)
-            human.followers.forEach {println(it?.toJson())}
+            human.followers.size shouldBeGreaterThan 0
+            human.followers.first()?.id shouldBe 2
+        }
+        "Json print" {
+            val human = HumanTable[1]!!
+            println("toJson() - " + human.toJson())
+            println("toJson(all = true) - " + human.toJson(true))
+            println("toJsonOnly() - " + human.toJsonOnly(Human::name, Human::followers))
+            println("toJsonWithout() - " + human.toJsonWithout(Human::name, Human::followers))
         }
     }
 })

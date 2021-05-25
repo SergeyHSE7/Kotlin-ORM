@@ -1,21 +1,11 @@
 import statements.select
-import utils.transformCase
 import kotlin.properties.ReadOnlyProperty
-import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.*
 import kotlin.reflect.full.memberProperties
 
 abstract class Entity {
     abstract var id: Int
-    val properties = this::class.properties
-
-    fun toJson(): String = "{\n" +
-            properties.joinToString(",\n") {
-                "\t\"${it.name}\": ${
-                    if (it.returnValue(this) is String) "${it.returnValue(this)}"
-                    else it.returnValue(this)
-                }"
-            } + "\n}"
+    val properties by lazy { this::class.properties }
 
     fun compareValuesWith(other: Entity): Boolean =
         properties.all { it.name == "id" || it.returnValue(this) == it.returnValue(other) }
@@ -38,10 +28,11 @@ abstract class Entity {
         }
 }
 
-fun <T, V> KMutableProperty1<T, V>.returnValue(receiver: Any): Any? = getter.call(receiver)
+
+fun KProperty1<out Entity, *>.returnValue(receiver: Any): Any? = getter.call(receiver)
 
 val KClass<out Entity>.properties
-    get() = memberProperties
-        .filter { it.getter.visibility == KVisibility.PUBLIC && !listOf("properties", "table").contains(it.name) }
-        .mapNotNull { it as? KMutableProperty1 }
+    get() = memberProperties.mapNotNull { it as? KMutableProperty1 }
+
+
 

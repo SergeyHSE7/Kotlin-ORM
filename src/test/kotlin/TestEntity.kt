@@ -1,3 +1,5 @@
+import utils.LazyProp
+
 data class TestEntity(
     override var id: Int = 0,
     var string: String = "",
@@ -23,6 +25,7 @@ data class Human(
     var name: String = "Josef",
     var age: Int = 32,
 ) : Entity() {
+    @LazyProp
     val tests: List<TestEntity> by oneToMany(TestTable, TestEntity::human)
     val followers: List<Human?> by manyToMany(
         FollowerToFollowersTable,

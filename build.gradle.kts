@@ -2,8 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     application
-    kotlin("jvm") version "1.5.0"
-    kotlin("plugin.serialization") version "1.4.10"
+    kotlin("jvm") version "1.5.10"
 }
 
 group = "me.sergey"

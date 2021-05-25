@@ -1,6 +1,7 @@
 package utils
 
 import org.atteo.evo.inflector.English
+import java.util.*
 
 fun String.ifTrue(flag: Boolean) = if (flag) this else ""
 
@@ -36,6 +37,9 @@ fun List<String>.joinWithCase(case: Case): String = when (case) {
     Case.Snake -> this.joinToString("_")
     Case.Kebab -> this.joinToString("-")
 }
+
+fun String.capitalize(): String =
+    replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
 
 enum class Case {
     Normal, Pascal, Snake, Camel, Kebab
