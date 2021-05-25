@@ -14,5 +14,5 @@ fun PreparedStatement.set(index: Int, value: Any?) = when (value) {
     is Float -> setFloat(index, value)
     is Double -> setDouble(index, value)
     is Time -> setTime(index, value)
-    else -> throw Exception("Unknown type: ${value?.javaClass?.name ?: "null"}")
+    else -> setNull(index, 4)//throw Exception("Unknown type: ${value?.javaClass?.name ?: "null"}")
 }

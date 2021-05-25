@@ -66,7 +66,6 @@ class MyTests : FreeSpec({
     "statements check" - {
         val newEntity = TestEntity(id = 1, string = "new1")
 
-
         "SELECT check" {
             TestTable.all().forEach(::println)
             TestTable.all().size shouldBe defaultTestEntities.size
@@ -96,8 +95,10 @@ class MyTests : FreeSpec({
             TestTable.update(entity) {
                 int = -2
                 string = "updateStr2"
+                human = human?.copy(age = 40)
             }
             TestTable.findById(2)!! shouldBe entity
+            HumanTable.findById(1)!!.age shouldBe 40
 
             entity.id = 5
             TestTable.update(entity)

@@ -26,10 +26,15 @@ fun <E: Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>) {
             as? KMutableProperty1<E, T> ?: return
 
     try {
-        if (prop.returnType is Entity)
+        if (column.refTable != null) {
+            // println(prop.name + " " + getValue(column))
+            val index = (getValue(column) as? String?)?.toIntOrNull() ?: return
+            prop.set(entity, column.refTable.findById(index) as T)
+        }
+        else {
+            // println(prop.returnType)
             prop.set(entity, getValue(column))
-        else
-            prop.set(entity, getValue(column))
+        }
     } catch (ex: PSQLException) {
         if (ex.message?.contains("не найдено") == false)
             throw ex

@@ -3,21 +3,19 @@ data class TestEntity(
     var string: String = "",
     var int: Int = 0,
     var human: Human? = null
-): Entity() {
-   // var human: Human? by Reference(HumanTable, Human())
-}
+): Entity()
 
 val defaultTestEntities = listOf(
     TestEntity(string = "str1", int = 1),
-    TestEntity(string = "str2", int = 2),
+    TestEntity(string = "str2", int = 2, human = Human(1)),
 )
 
-val TestTable = table<TestEntity>(true) {
+object TestTable : Table<TestEntity>(TestEntity::class, true, {
     varchar(TestEntity::string).unique()
     integer(TestEntity::int)
-    // id(TestEntity::human)
+    reference(TestEntity::human, HumanTable)
 
-}.defaultEntities(defaultTestEntities)
+}, defaultTestEntities)
 
 
 data class Human(
@@ -26,6 +24,11 @@ data class Human(
     var age: Int = 32,
 ): Entity()
 
+
+object HumanTable: Table<Human>(Human::class, true, {
+    varchar(Human::name)
+    integer(Human::age)
+}, listOf(Human()))
 /*
 val HumanTable = table<Human>(true) {
     varchar(Human::name)
