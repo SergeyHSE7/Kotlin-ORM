@@ -1,14 +1,15 @@
 import statements.*
+import utils.CacheMap
 import utils.Case
 import utils.ifTrue
 import utils.transformCase
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 
-inline fun <reified E : Entity> table(
+/*inline fun <reified E : Entity> table(
     refresh: Boolean = false,
     noinline columnsBody: Table<E>.() -> Unit = {}
-): Table<E> = object : Table<E>(E::class, refresh, columnsBody) {}
+): Table<E> = object : Table<E>(E::class, refresh, columnsBody) {}*/
 
 abstract class Table<E : Entity>(
     val entityClass: KClass<E>,
@@ -16,6 +17,7 @@ abstract class Table<E : Entity>(
     columnsBody: Table<E>.() -> Unit = {},
     defaultEntities: List<E> = listOf()
 ) {
+    val cache = CacheMap<E>(10)
     var tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
     val columns = mutableListOf<Column<*>>()
 
@@ -41,9 +43,9 @@ abstract class Table<E : Entity>(
         add(entity)
     }
 
-    fun add(entity: E): Int? = insert(entity).getId()
-    fun addAll(entities: List<E>): List<Int> = insert(entities).getIds()
-    fun addAll(vararg entities: E): List<Int> = insert(entities.toList()).getIds()
+    fun add(entity: E): Int? = insert(entity).getId()//?.apply { cache[this] = entity }
+    fun addAll(entities: List<E>): List<Int> = insert(entities).getIds()//.apply {forEach { cache[this] = entity }
+    fun addAll(vararg entities: E): List<Int> = addAll(entities.toList())
 
     operator fun get(id: Int): E? = findById(id)
     operator fun contains(entity: E): Boolean = selectAll().apply {
@@ -53,9 +55,10 @@ abstract class Table<E : Entity>(
         }
     }.getEntity() != null
 
-    fun all(condition: WhereCondition? = null): List<E> = selectAll().where(condition).getEntities()
+    fun all(): List<E> = selectAll().getEntities()
+    fun findAll(condition: WhereCondition): List<E> = selectAll().where(condition).getEntities()
     fun find(condition: WhereCondition): E? = selectAll().where(condition).getEntity()
-    fun findById(id: Int): E? = find { Entity::id eq id }
+    fun findById(id: Int): E? = cache[id] ?: find { Entity::id eq id }
     fun findIdOf(condition: WhereCondition): Int? = select("id").where(condition).getEntity()?.id
 
     operator fun set(id: Int, entity: E) = update(entity) { this.id = id }
@@ -65,7 +68,6 @@ abstract class Table<E : Entity>(
     }
 
     operator fun minusAssign(entity: E) = delete(entity)
-    fun deleteById(id: Int) = delete { Entity::id eq id }
     fun delete(entity: E) = deleteById(entity.id)
 
 

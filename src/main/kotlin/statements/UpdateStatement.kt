@@ -11,8 +11,9 @@ import kotlin.reflect.jvm.internal.impl.resolve.calls.inference.CapturedType
 
 fun <E : Entity> Table<out E>.update(entity: E, vararg props: KMutableProperty1<E, *>) =
     UpdateStatement(this, entity, props.toList()).where { "id = ${entity.id}" }.execute()
+        .also { cache.remove(entity.id) }
 
-class UpdateStatement<E : Entity>(
+private class UpdateStatement<E : Entity>(
     private val table: Table<out E>,
     val entity: E,
     private val props: List<KMutableProperty1<E, *>> = listOf()

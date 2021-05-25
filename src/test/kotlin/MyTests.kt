@@ -16,7 +16,7 @@ import utils.*
 )*/
 
 class MyTests : FreeSpec({
-    "string transform utils check" - {
+    "!string transform utils check" - {
         "plural library check" {
             English.plural("word") shouldBe "words"
             English.plural("box") shouldBe "boxes"
@@ -41,7 +41,7 @@ class MyTests : FreeSpec({
         }
     }
 
-    "check table operations" - {
+    "!check table operations" - {
         "create table" {
             TestTable.tableName shouldBe "test_entities"
             TestTable.entityClass.simpleName shouldBe "TestEntity"

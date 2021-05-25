@@ -8,8 +8,8 @@ import utils.map
 import utils.set
 import java.sql.PreparedStatement
 
-fun <E: Entity> Table<E>.insert(vararg insertEntities: E) = insert(insertEntities.toList())
-fun <E: Entity> Table<E>.insert(insertEntities: List<E>) = InsertStatement(this, insertEntities)
+fun <E : Entity> Table<E>.insert(vararg insertEntities: E) = insert(insertEntities.toList())
+fun <E : Entity> Table<E>.insert(insertEntities: List<E>) = InsertStatement(this, insertEntities)
 
 class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: List<E> = listOf()) {
     private val props = table.columns.map { it.property }.filter { it.name != "id" }
@@ -20,11 +20,12 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
     fun add(vararg objects: E) = this.apply { entities.addAll(objects) }
 
     fun getId(): Int? = getIds().firstOrNull()
-    fun getIds(): List<Int> = getPreparedStatement().executeQuery().map { getInt("id") }
+    fun getIds(): List<Int> = getPreparedStatement().executeQuery().map { getInt("id").also { table.cache.remove(it) } }
+
     private fun getEntity(): E? {
         getEntity = true
         return getPreparedStatement(listOf(entities.removeAt(0))).executeQuery()
-            .getEntity(table)
+            .getEntity(table)?.also { table.cache += it }
     }
 
     fun getEntities(): List<E> {
@@ -35,7 +36,7 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
             val list = mutableListOf<E?>()
             kotlin.runCatching { list.add(getEntity()) }
             list.mapNotNull { it }
-        }
+        }.also { table.cache.addAll(it) }
     }
 
     fun getSql(preparedEntities: List<E> = entities): String =
@@ -47,12 +48,14 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
     private fun getPreparedStatement(preparedEntities: List<E> = entities): PreparedStatement =
         database.connection.prepareStatement(getSql(preparedEntities))
             .apply {
-                set(entities.flatMap { entity -> props.map {
-                    val value = it.get(entity)
-                    if (value is Entity)
-                        value.id
-                    else value
-                } })
+                set(entities.flatMap { entity ->
+                    props.map {
+                        val value = it.get(entity)
+                        if (value is Entity)
+                            value.id
+                        else value
+                    }
+                })
                 println(toString())
             }
 }

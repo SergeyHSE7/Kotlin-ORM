@@ -9,6 +9,7 @@ import kotlin.reflect.KMutableProperty1
 fun <E : Entity> Table<E>.selectAll(): SelectStatement<E> = SelectStatement(this, selectAll = true)
 fun <E : Entity> Table<E>.select(vararg propsNames: String): SelectStatement<E> =
     SelectStatement(this, propsNames.toList())
+
 fun <E : Entity> Table<E>.select(vararg props: KMutableProperty1<E, *>): SelectStatement<E> =
     SelectStatement(this, props.map { prop -> prop.name.transformCase(Case.Camel, Case.Snake) })
 
@@ -24,11 +25,17 @@ class SelectStatement<E : Entity>(
 
     fun getEntity(): E? = database.connection.createStatement().executeQuery(getSql())
         .apply { next() }.getEntity(table)
-        .also { println(getSql()) }
+        .also {
+            if (selectAll && it != null) table.cache += it
+            println(getSql())
+        }
 
     fun getEntities(): List<E> = database.connection.createStatement().executeQuery(getSql())
         .map { getEntity(table) }
-        .also { println(getSql()) }
+        .also {
+            if (selectAll) table.cache.addAll(it)
+            println(getSql())
+        }
 
     fun getSql(): String =
         "SELECT ${if (selectAll) "*" else columns.apply { addAll(whereStatement.columns) }.joinToString { it }} " +

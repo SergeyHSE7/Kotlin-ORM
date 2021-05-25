@@ -1,4 +1,3 @@
-import statements.select
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.*
 import kotlin.reflect.full.memberProperties
@@ -12,7 +11,7 @@ abstract class Entity {
 
     fun <E : Entity> oneToMany(refTable: Table<E>?, keyProp: KMutableProperty1<E, *>) =
         ReadOnlyProperty<Any?, List<E>> { thisRef, _ ->
-            refTable?.all { keyProp eq (thisRef as Entity).id } ?: listOf()
+            refTable?.findAll { keyProp eq (thisRef as Entity).id } ?: listOf()
         }
 
     fun <K : Entity, V : Entity?> manyToMany(
@@ -21,10 +20,7 @@ abstract class Entity {
         valueProp: KMutableProperty1<K, V>
     ) =
         ReadOnlyProperty<Any?, List<V>> { thisRef, _ ->
-            refKeyTable?.select(valueProp)
-                ?.where { keyProp eq (thisRef as Entity).id }
-                ?.getEntities()?.map { valueProp.get(it) }
-                ?: listOf()
+            refKeyTable?.findAll { keyProp eq (thisRef as Entity).id }?.map { valueProp.get(it) } ?: listOf()
         }
 }
 

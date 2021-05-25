@@ -6,7 +6,7 @@ import database
 
 fun <E: Entity> Table<E>.create() = CreateStatement(this).execute()
 
-class CreateStatement<E : Entity>(private val table: Table<E>) {
+private class CreateStatement<E : Entity>(private val table: Table<E>) {
     private val maxLength = table.columns.maxOf { it.name.length }
 
     fun getSql(): String =
