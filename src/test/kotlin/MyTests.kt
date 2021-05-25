@@ -114,5 +114,10 @@ class MyTests : FreeSpec({
             println(human)
             human.tests.forEach(::println)
         }
+        "Many To Many check" {
+            val human = HumanTable[1]!!
+            println(human)
+            human.followers.forEach {println(it?.toJson())}
+        }
     }
 })

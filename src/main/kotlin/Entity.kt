@@ -1,3 +1,4 @@
+import statements.select
 import utils.transformCase
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
@@ -22,6 +23,18 @@ abstract class Entity {
     fun <E : Entity> oneToMany(refTable: Table<E>?, keyProp: KMutableProperty1<E, *>) =
         ReadOnlyProperty<Any?, List<E>> { thisRef, _ ->
             refTable?.all { keyProp eq (thisRef as Entity).id } ?: listOf()
+        }
+
+    fun <K : Entity, V : Entity?> manyToMany(
+        refKeyTable: Table<K>?,
+        keyProp: KMutableProperty1<K, *>,
+        valueProp: KMutableProperty1<K, V>
+    ) =
+        ReadOnlyProperty<Any?, List<V>> { thisRef, _ ->
+            refKeyTable?.select(valueProp)
+                ?.where { keyProp eq (thisRef as Entity).id }
+                ?.getEntities()?.map { valueProp.get(it) }
+                ?: listOf()
         }
 }
 

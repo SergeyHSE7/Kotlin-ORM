@@ -24,22 +24,12 @@ data class Human(
     var age: Int = 32,
 ) : Entity() {
     val tests: List<TestEntity> by oneToMany(TestTable, TestEntity::human)
+    val followers: List<Human?> by manyToMany(
+        FollowerToFollowersTable,
+        FollowerToFollower::follow,
+        FollowerToFollower::follower
+    )
 }
-
-data class FollowerToFollowers(
-    override var id: Int = 0,
-    var follow: Human? = null,
-    var follower: Human? = null
-) : Entity()
-
-object FollowerToFollowersTable : Table<FollowerToFollowers>(
-    FollowerToFollowers::class, true,
-    {
-        reference(FollowerToFollowers::follow, HumanTable)
-        reference(FollowerToFollowers::follower, HumanTable)
-    },
-    listOf(FollowerToFollowers())
-)
 
 object HumanTable : Table<Human>(
     Human::class, true, {
@@ -49,6 +39,22 @@ object HumanTable : Table<Human>(
         Human(),
         Human(name = "John", age = 28)
     )
+)
+
+
+data class FollowerToFollower(
+    override var id: Int = 0,
+    var follow: Human? = null,
+    var follower: Human? = null
+) : Entity()
+
+object FollowerToFollowersTable : Table<FollowerToFollower>(
+    FollowerToFollower::class, true,
+    {
+        reference(FollowerToFollower::follow, HumanTable)
+        reference(FollowerToFollower::follower, HumanTable)
+    },
+    listOf(FollowerToFollower(follow = Human(1), follower = Human(2)))
 )
 
 /*val HumanTable = table<Human>(true) {
