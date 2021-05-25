@@ -12,7 +12,7 @@ fun <E : Entity> Table<E>.deleteById(id: Int) =
         .also { cache.remove(id) }
 
 
-private class DeleteStatement<E : Entity>(private val table: Table<E>) {
+private class DeleteStatement<in E : Entity>(private val table: Table<E>) {
     private var whereStatement: WhereStatement = WhereStatement()
 
     fun where(conditionBody: WhereCondition?) = this.apply { whereStatement.addCondition(conditionBody) }

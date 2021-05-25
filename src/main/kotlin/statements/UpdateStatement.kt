@@ -7,15 +7,14 @@ import returnValue
 import utils.Case
 import utils.transformCase
 import kotlin.reflect.KMutableProperty1
-import kotlin.reflect.jvm.internal.impl.resolve.calls.inference.CapturedType
 
 fun <E : Entity> Table<out E>.update(entity: E, vararg props: KMutableProperty1<E, *>) =
     UpdateStatement(this, entity, props.toList()).where { "id = ${entity.id}" }.execute()
         .also { cache.remove(entity.id) }
 
-private class UpdateStatement<E : Entity>(
+private class UpdateStatement<out E : Entity>(
     private val table: Table<out E>,
-    val entity: E,
+    private val entity: E,
     private val props: List<KMutableProperty1<E, *>> = listOf()
 ) {
     private val columnValues: List<Pair<String, String>> = props.ifEmpty { entity.properties }

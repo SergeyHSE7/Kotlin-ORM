@@ -6,7 +6,7 @@ import database
 
 fun <E : Entity> Table<E>.drop() = DropStatement(this).execute().also { cache.clear() }
 
-private class DropStatement<E : Entity>(private val table: Table<E>) {
+private class DropStatement<in E : Entity>(private val table: Table<E>) {
 
     fun getSql(): String =
         "DROP TABLE IF EXISTS ${table.tableName}"

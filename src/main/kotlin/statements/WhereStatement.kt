@@ -20,8 +20,12 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
     else " WHERE " + conditions.joinToString(" AND ")
 
 
-    infix fun <T1 : KMutableProperty1<*, *>> T1.eq(obj: Any?): String = if (obj == null) isNull() else boolOperator(obj, "=")
-    infix fun <T1 : KMutableProperty1<*, *>> T1.neq(obj: Any?): String = if (obj == null) isNotNull() else boolOperator(obj, "!=")
+    infix fun <T1 : KMutableProperty1<*, *>> T1.eq(obj: Any?): String =
+        if (obj == null) isNull() else boolOperator(obj, "=")
+
+    infix fun <T1 : KMutableProperty1<*, *>> T1.neq(obj: Any?): String =
+        if (obj == null) isNotNull() else boolOperator(obj, "!=")
+
     infix fun <T1 : KMutableProperty1<*, *>> T1.less(obj: Any?): String = boolOperator(obj, "<")
     infix fun <T1 : KMutableProperty1<*, *>> T1.greater(obj: Any?): String = boolOperator(obj, ">")
     infix fun <T1 : KMutableProperty1<*, *>> T1.lessEq(obj: Any?): String = boolOperator(obj, "<=")
@@ -59,7 +63,8 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
                 when (obj) {
                     is String -> "'$obj'"
                     is List<Any?> -> obj.joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
-                    is KMutableProperty1<*, *> -> obj.name.transformCase(Case.Camel, Case.Snake).also { columns.add(it) }
+                    is KMutableProperty1<*, *> -> obj.name.transformCase(Case.Camel, Case.Snake)
+                        .also { columns.add(it) }
                     else -> obj.toString()
                 }.also { columns.add(name.transformCase(Case.Camel, Case.Snake)) }
 }
