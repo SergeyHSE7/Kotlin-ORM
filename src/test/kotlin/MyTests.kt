@@ -70,15 +70,21 @@ class MyTests : FreeSpec({
             TestTable.all().forEach(::println)
             TestTable.all().size shouldBe defaultTestEntities.size
 
-            TestTable.findById(2) shouldBe defaultTestEntities[1].apply { id = 2 }
-            TestTable.findById(2)?.compareValuesWith(defaultTestEntities[1]) shouldBe true
-            TestTable.findById(100) shouldBe null
+            TestTable[2] shouldBe defaultTestEntities[1].apply { id = 2 }
+            TestTable[2]?.compareValuesWith(defaultTestEntities[1]) shouldBe true
+            TestTable[100] shouldBe null
 
             TestTable.findIdOf { TestEntity::string eq "str2" } shouldBe 2
             TestTable.find { TestEntity::int greater 1 and (TestEntity::string startsWith "str") }?.string shouldBe "str2"
+
+            println()
+            TestTable.getValuesOfColumn(TestEntity::string).forEach { println(it) }
         }
         "INSERT check" {
+            (newEntity in TestTable) shouldBe false
             TestTable.add(newEntity) shouldBe defaultTestEntities.size + 1
+            (newEntity in TestTable) shouldBe true
+
             TestTable.add(newEntity) shouldBe null
         }
         "DELETE check" {
@@ -86,23 +92,27 @@ class MyTests : FreeSpec({
             TestTable.find { TestEntity::string eq newEntity.string } shouldBe null
         }
         "UPDATE check" {
-            var entity = TestTable.findById(1)!!
+            var entity = TestTable[1]!!
             entity.string = "updateStr1"
             TestTable.update(entity, TestEntity::string)
-            TestTable.findById(1)!!.string shouldBe "updateStr1"
+            TestTable[1]!!.string shouldBe "updateStr1"
 
-            entity = TestTable.findById(2)!!
+            entity = TestTable[2]!!
             TestTable.update(entity) {
                 int = -2
                 string = "updateStr2"
                 human = human?.copy(age = 40)
             }
-            TestTable.findById(2)!! shouldBe entity
-            HumanTable.findById(1)!!.age shouldBe 40
+            TestTable[2]!! shouldBe entity
+            HumanTable[1]!!.age shouldBe 40
 
-            entity.id = 5
-            TestTable.update(entity)
-            TestTable.findById(2)!! shouldBe entity.copy(id = 2)
+            TestTable[5] = entity
+            TestTable[2]!! shouldBe entity.copy(id = 2)
+        }
+        "One To Many check" {
+            val human = HumanTable[1]!!
+            println(human)
+            human.tests.forEach(::println)
         }
     }
 })

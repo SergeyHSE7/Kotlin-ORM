@@ -20,8 +20,8 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
     else " WHERE " + conditions.joinToString(" AND ")
 
 
-    infix fun <T1 : KMutableProperty1<*, *>> T1.eq(obj: Any?): String = boolOperator(obj, "=")
-    infix fun <T1 : KMutableProperty1<*, *>> T1.neq(obj: Any?): String = boolOperator(obj, "!=")
+    infix fun <T1 : KMutableProperty1<*, *>> T1.eq(obj: Any?): String = if (obj == null) isNull() else boolOperator(obj, "=")
+    infix fun <T1 : KMutableProperty1<*, *>> T1.neq(obj: Any?): String = if (obj == null) isNotNull() else boolOperator(obj, "!=")
     infix fun <T1 : KMutableProperty1<*, *>> T1.less(obj: Any?): String = boolOperator(obj, "<")
     infix fun <T1 : KMutableProperty1<*, *>> T1.greater(obj: Any?): String = boolOperator(obj, ">")
     infix fun <T1 : KMutableProperty1<*, *>> T1.lessEq(obj: Any?): String = boolOperator(obj, "<=")

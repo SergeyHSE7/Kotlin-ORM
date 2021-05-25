@@ -8,9 +8,9 @@ import kotlin.reflect.KMutableProperty1
 inline fun <reified E : Entity> table(
     refresh: Boolean = false,
     noinline columnsBody: Table<E>.() -> Unit = {}
-): Table<E> = Table(E::class, refresh, columnsBody)
+): Table<E> = object : Table<E>(E::class, refresh, columnsBody) {}
 
-open class Table<E : Entity>(
+abstract class Table<E : Entity>(
     val entityClass: KClass<E>,
     refresh: Boolean = false,
     columnsBody: Table<E>.() -> Unit = {},
@@ -37,27 +37,45 @@ open class Table<E : Entity>(
     fun clearTable() = delete()
 
 
+    operator fun plusAssign(entity: E) {
+        add(entity)
+    }
+
     fun add(entity: E): Int? = insert(entity).getId()
     fun addAll(entities: List<E>): List<Int> = insert(entities).getIds()
     fun addAll(vararg entities: E): List<Int> = insert(entities.toList()).getIds()
+
+    operator fun get(id: Int): E? = findById(id)
+    operator fun contains(entity: E): Boolean = selectAll().apply {
+        entity.properties.forEach { prop ->
+            if (prop.name != "id")
+                where { prop eq prop.returnValue(entity) }
+        }
+    }.getEntity() != null
 
     fun all(condition: WhereCondition? = null): List<E> = selectAll().where(condition).getEntities()
     fun find(condition: WhereCondition): E? = selectAll().where(condition).getEntity()
     fun findById(id: Int): E? = find { Entity::id eq id }
     fun findIdOf(condition: WhereCondition): Int? = select("id").where(condition).getEntity()?.id
 
+    operator fun set(id: Int, entity: E) = update(entity) { this.id = id }
     fun update(entity: E, func: E.() -> Unit) {
         func(entity)
         update(entity)
     }
 
+    operator fun minusAssign(entity: E) = delete(entity)
     fun deleteById(id: Int) = delete { Entity::id eq id }
     fun delete(entity: E) = deleteById(entity.id)
 
 
     fun <T> getValuesOfColumn(prop: KMutableProperty1<E, T>): List<T> = select(prop).getEntities().map(prop)
 
-    inner class Column<T>(val property: KMutableProperty1<E, T>, private val sqlType: String, val refTable: Table<out Entity>? = null) {
+    inner class Column<T>(
+        val property: KMutableProperty1<E, T>,
+        private val sqlType: String,
+        val refTable: Table<out Entity>? = null
+    ) {
         var name: String = property.name.transformCase(Case.Camel, Case.Snake)
         val entityClass = this@Table.entityClass
         private var defaultValue: T? = null
@@ -95,7 +113,7 @@ open class Table<E : Entity>(
     fun <T> integer(prop: KMutableProperty1<E, T>) = Column(prop, "integer")
     fun <T> real(prop: KMutableProperty1<E, T>) = Column(prop, "real")
     fun <T> varchar(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(prop, "varchar($size)")
-    fun <T: Entity> reference(prop: KMutableProperty1<E, T?>, refTable: Table<T>) = Column(prop, "integer", refTable)
+    fun <T : Entity> reference(prop: KMutableProperty1<E, T?>, refTable: Table<T>) = Column(prop, "integer", refTable)
 
 }
 
