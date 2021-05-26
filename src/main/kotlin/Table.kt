@@ -21,6 +21,12 @@ abstract class Table<E : Entity>(
     var tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
     val columns = mutableListOf<Column<*>>()
 
+    val size: Int
+        get() = database.connection.createStatement().executeQuery("SELECT COUNT(*) FROM $tableName")
+            .apply { next() }.getInt(1)
+
+    fun isEmpty() = size == 0
+
     init {
         serial(entityClass.properties.first { it.name == "id" } as KMutableProperty1<E, Int>).primaryKey()
         columnsBody()

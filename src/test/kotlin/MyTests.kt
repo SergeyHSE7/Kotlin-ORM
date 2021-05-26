@@ -67,7 +67,7 @@ class MyTests : FreeSpec({
 
         "SELECT check" {
             TestTable.all().forEach(::println)
-            TestTable.all().size shouldBe defaultTestEntities.size
+            TestTable.size shouldBe defaultTestEntities.size
 
             TestTable[2] shouldBe defaultTestEntities[1].apply { id = 2 }
             TestTable[2]?.compareValuesWith(defaultTestEntities[1]) shouldBe true
