@@ -5,6 +5,7 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 import org.atteo.evo.inflector.English
 import org.postgresql.util.PSQLException
 import statements.delete
+import statements.selectAll
 import statements.update
 import utils.Case
 import utils.*
@@ -78,6 +79,10 @@ class MyTests : FreeSpec({
 
             println()
             TestTable.getValuesOfColumn(TestEntity::string).forEach { println(it) }
+
+            TestTable.selectAll().limit(1).getEntities().size shouldBe 1
+            TestTable.selectAll().orderByDescending(TestEntity::int).getEntity()?.int shouldBe 2
+            TestTable.selectAll().offset(1).getEntity()?.int shouldBe 2
         }
         "INSERT check" {
             (newEntity in TestTable) shouldBe false

@@ -63,4 +63,5 @@ object FollowerToFollowersTable : Table<FollowerToFollower>(
 /*val HumanTable = table<Human>(true) {
     varchar(Human::name)
     integer(Human::age)
-}.defaultEntities(Human())*/
+}.defaultEntities(Human(),
+        Human(name = "John", age = 28))*/
