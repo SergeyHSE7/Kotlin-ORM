@@ -14,7 +14,7 @@ import kotlin.reflect.KMutableProperty1
 abstract class Table<E : Entity>(
     val entityClass: KClass<E>,
     refresh: Boolean = false,
-    columnsBody: Table<E>.() -> Unit = {},
+    columnsBody: Table<E>.CreateMethods.() -> Unit = {},
     defaultEntities: List<E> = listOf()
 ) {
     val cache = CacheMap<E>(10)
@@ -29,8 +29,10 @@ abstract class Table<E : Entity>(
     fun isEmpty() = size == 0
 
     init {
-        serial(entityClass.properties.first { it.name == "id" } as KMutableProperty1<E, Int>).primaryKey()
-        columnsBody()
+        with(CreateMethods()) {
+            serial(entityClass.properties.first { it.name == "id" } as KMutableProperty1<E, Int>).primaryKey()
+            columnsBody()
+        }
 
 
         if (refresh) dropTable()
@@ -118,15 +120,18 @@ abstract class Table<E : Entity>(
             "${name.padEnd(nameLength)} ${sqlType.uppercase()} ${attributesToSql()}".trim()
     }
 
-    private fun <T> serial(prop: KMutableProperty1<E, T>) = Column(prop, "serial")
-    fun <T> integer(prop: KMutableProperty1<E, T>) = Column(prop, "integer")
-    fun <T> real(prop: KMutableProperty1<E, T>) = Column(prop, "real")
-    fun <T> varchar(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(prop, "varchar($size)")
+    inner class CreateMethods {
+        fun <T> serial(prop: KMutableProperty1<E, T>) = Column(prop, "serial")
+        fun <T> integer(prop: KMutableProperty1<E, T>) = Column(prop, "integer")
+        fun <T> real(prop: KMutableProperty1<E, T>) = Column(prop, "real")
+        fun <T> varchar(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(prop, "varchar($size)")
 
-    fun <T : Entity> reference(prop: KMutableProperty1<E, T?>, refTable: Table<T>) = Column(prop, "integer", refTable)
+        fun <T : Entity> reference(prop: KMutableProperty1<E, T?>, refTable: Table<T>) =
+            Column(prop, "integer", refTable)
 
-    fun uniqueColumns(vararg props: KMutableProperty1<E, *>) {
-        uniqueColumns.addAll(props.map { it.columnName })
+        fun uniqueColumns(vararg props: KMutableProperty1<E, *>) {
+            uniqueColumns.addAll(props.map { it.columnName })
+        }
     }
 
 }
