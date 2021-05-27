@@ -2,6 +2,7 @@ package statements
 
 import Entity
 import Table
+import columnName
 import database
 import utils.*
 import kotlin.reflect.KMutableProperty1
@@ -13,7 +14,7 @@ fun <E : Entity> Table<E>.select(vararg propsNames: String): SelectStatement<E> 
     SelectStatement(this, propsNames.toList())
 
 fun <E : Entity> Table<E>.select(vararg props: KMutableProperty1<E, *>): SelectStatement<E> =
-    SelectStatement(this, props.map { prop -> prop.name.transformCase(Case.Camel, Case.Snake) })
+    SelectStatement(this, props.map { prop -> prop.columnName })
 
 class SelectStatement<E : Entity>(
     private val table: Table<E>,
@@ -29,22 +30,22 @@ class SelectStatement<E : Entity>(
     fun where(conditionBody: WhereCondition?) = this.apply { whereStatement.addCondition(conditionBody) }
 
     fun orderBy(vararg props: KMutableProperty1<E, *>) =
-        this.apply { orderColumns.addAll(props.map { OrderColumn(it.name) }) }
+        this.apply { orderColumns.addAll(props.map { OrderColumn(it.columnName) }) }
 
     fun orderByDescending(vararg props: KMutableProperty1<E, *>) =
-        this.apply { orderColumns.addAll(props.map { OrderColumn(it.name, true) }) }
+        this.apply { orderColumns.addAll(props.map { OrderColumn(it.columnName, true) }) }
 
     fun limit(limit: Int) = this.apply { this.limit = limit }
     fun offset(offset: Int) = this.apply { this.offset = offset }
 
-    fun getEntity(): E? = database.connection.createStatement().executeQuery(getSql())
+    fun getEntity(): E? = database.executeQuery(getSql())
         .apply { next() }.getEntity(table)
         .also {
             if (selectAll && it != null) table.cache += it
             println(getSql())
         }
 
-    fun getEntities(): List<E> = database.connection.createStatement().executeQuery(getSql())
+    fun getEntities(): List<E> = database.executeQuery(getSql())
         .map { getEntity(table) }
         .also {
             if (selectAll) table.cache.addAll(it)

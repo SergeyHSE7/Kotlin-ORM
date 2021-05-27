@@ -18,7 +18,7 @@ private class DeleteStatement<in E : Entity>(private val table: Table<E>) {
     fun where(conditionBody: WhereCondition?) = this.apply { whereStatement.addCondition(conditionBody) }
 
     fun execute() {
-        database.connection.createStatement().execute(getSql()).also { println(getSql()) }
+        database.executeSql(getSql()).also { println(getSql()) }
     }
 
     fun getSql(): String = "DELETE FROM ${table.tableName}" + whereStatement.getSql()

@@ -42,7 +42,7 @@ class MyTests : FreeSpec({
         }
     }
 
-    "!check table operations" - {
+    "check table operations" - {
         "create table" {
             TestTable.tableName shouldBe "test_entities"
             TestTable.entityClass.simpleName shouldBe "TestEntity"
@@ -90,6 +90,7 @@ class MyTests : FreeSpec({
             (newEntity in TestTable) shouldBe true
 
             TestTable.add(newEntity) shouldBe null
+            TestTable.add(TestEntity(int = 1, int1 = 1)) shouldBe null
         }
         "DELETE check" {
             TestTable.delete { TestEntity::string eq newEntity.string }

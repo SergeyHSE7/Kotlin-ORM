@@ -4,6 +4,7 @@ data class TestEntity(
     override var id: Int = 0,
     var string: String = "",
     var int: Int = 0,
+    var int1: Int = 1,
     var human: Human? = null
 ) : Entity()
 
@@ -15,8 +16,10 @@ val defaultTestEntities = listOf(
 object TestTable : Table<TestEntity>(TestEntity::class, true, {
     varchar(TestEntity::string).unique()
     integer(TestEntity::int)
+    integer(TestEntity::int1)
     reference(TestEntity::human, HumanTable)
 
+    uniqueColumns(TestEntity::int, TestEntity::int1)
 }, defaultTestEntities)
 
 

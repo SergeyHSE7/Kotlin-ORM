@@ -1,5 +1,6 @@
 package statements
 
+import columnName
 import utils.Case
 import utils.transformCase
 import kotlin.reflect.KMutableProperty1
@@ -51,20 +52,19 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
     infix fun <T1 : KMutableProperty1<*, *>> T1.notInList(list: List<Any?>): String = boolOperator(list, "NOT IN")
 
     fun <T1 : KMutableProperty1<*, *>> T1.isNull(): String = name.transformCase(Case.Camel, Case.Snake) + " IS NULL"
-    fun <T1 : KMutableProperty1<*, *>> T1.isNotNull(): String =
-        name.transformCase(Case.Camel, Case.Snake) + " IS NOT NULL"
+    fun <T1 : KMutableProperty1<*, *>> T1.isNotNull(): String = "$columnName IS NOT NULL"
 
     infix fun String.and(str: String): String = "$this AND $str"
     infix fun String.or(str: String): String = "$this OR $str"
 
 
     private fun <T : KMutableProperty1<*, *>> T.boolOperator(obj: Any?, strOperator: String): String =
-        name.transformCase(Case.Camel, Case.Snake) + " $strOperator " +
+        "$columnName $strOperator " +
                 when (obj) {
                     is String -> "'$obj'"
                     is List<Any?> -> obj.joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
-                    is KMutableProperty1<*, *> -> obj.name.transformCase(Case.Camel, Case.Snake)
+                    is KMutableProperty1<*, *> -> obj.columnName
                         .also { columns.add(it) }
                     else -> obj.toString()
-                }.also { columns.add(name.transformCase(Case.Camel, Case.Snake)) }
+                }.also { columns.add(columnName) }
 }

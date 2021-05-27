@@ -11,5 +11,5 @@ private class DropStatement<in E : Entity>(private val table: Table<E>) {
     fun getSql(): String =
         "DROP TABLE IF EXISTS ${table.tableName}"
 
-    fun execute() = database.connection.createStatement().execute(getSql()).also { println(getSql()) }
+    fun execute() = database.executeSql(getSql()).also { println(getSql()) }
 }

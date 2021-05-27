@@ -2,6 +2,7 @@ package statements
 
 import Entity
 import Table
+import columnName
 import database
 import returnValue
 import utils.Case
@@ -20,7 +21,7 @@ private class UpdateStatement<out E : Entity>(
     private val columnValues: List<Pair<String, String>> = props.ifEmpty { entity.properties }
         .filter { it.returnValue(entity) !is Entity }
         .map { prop ->
-            prop.name.transformCase(Case.Camel, Case.Snake) to
+            prop.columnName to
                     if (prop.returnValue(entity) is String) "'${prop.returnValue(entity)}'"
                     else prop.returnValue(entity).toString()
         }.filter { it.first != "id" }
@@ -39,7 +40,7 @@ private class UpdateStatement<out E : Entity>(
     fun where(conditionBody: WhereCondition) = this.apply { whereStatement.addCondition(conditionBody) }
 
     fun execute() {
-        database.connection.createStatement().execute(getSql()).also {
+        database.executeSql(getSql()).also {
             updateReferences()
             println(getSql())
         }

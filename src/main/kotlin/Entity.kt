@@ -1,3 +1,5 @@
+import utils.Case
+import utils.transformCase
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.*
 import kotlin.reflect.full.memberProperties
@@ -26,6 +28,8 @@ abstract class Entity {
 
 
 fun KProperty1<out Entity, *>.returnValue(receiver: Any): Any? = getter.call(receiver)
+val KProperty1<*, *>.columnName: String
+    get() = name.transformCase(Case.Camel, Case.Snake)
 
 val KClass<out Entity>.properties
     get() = memberProperties.mapNotNull { it as? KMutableProperty1 }

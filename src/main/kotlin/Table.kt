@@ -20,6 +20,7 @@ abstract class Table<E : Entity>(
     val cache = CacheMap<E>(10)
     var tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
     val columns = mutableListOf<Column<*>>()
+    val uniqueColumns = mutableSetOf<String>()
 
     val size: Int
         get() = database.connection.createStatement().executeQuery("SELECT COUNT(*) FROM $tableName")
@@ -84,7 +85,7 @@ abstract class Table<E : Entity>(
         private val sqlType: String,
         val refTable: Table<out Entity>? = null
     ) {
-        var name: String = property.name.transformCase(Case.Camel, Case.Snake)
+        var name: String = property.columnName
         val entityClass = this@Table.entityClass
         private var defaultValue: T? = null
         private var isNotNull = false
@@ -121,7 +122,12 @@ abstract class Table<E : Entity>(
     fun <T> integer(prop: KMutableProperty1<E, T>) = Column(prop, "integer")
     fun <T> real(prop: KMutableProperty1<E, T>) = Column(prop, "real")
     fun <T> varchar(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(prop, "varchar($size)")
+
     fun <T : Entity> reference(prop: KMutableProperty1<E, T?>, refTable: Table<T>) = Column(prop, "integer", refTable)
+
+    fun uniqueColumns(vararg props: KMutableProperty1<E, *>) {
+        uniqueColumns.addAll(props.map { it.columnName })
+    }
 
 }
 
