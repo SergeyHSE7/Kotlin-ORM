@@ -82,7 +82,20 @@ abstract class Table<E : Entity>(
 
     fun <T> getValuesOfColumn(prop: KMutableProperty1<E, T>): List<T> = select(prop).getEntities().map(prop)
 
-    inner class Column<T>(
+    inner class Reference<R : Entity>(property: KMutableProperty1<E, R?>, refTable: Table<out Entity>, val onDelete: Action) :
+        Column<R?>(property, "integer", refTable) {
+
+        override fun attributesToSql(): String =
+            super.attributesToSql() + " REFERENCES ${refTable!!.tableName} (id) ON DELETE " +
+                    onDelete.name.transformCase(Case.Pascal, Case.Normal).uppercase()
+
+    }
+
+    enum class Action {
+        Cascade, SetNull, SetDefault
+    }
+
+    open inner class Column<T>(
         val property: KMutableProperty1<E, T>,
         private val sqlType: String,
         val refTable: Table<out Entity>? = null
@@ -109,7 +122,7 @@ abstract class Table<E : Entity>(
         fun primaryKey() = this.also { isPrimaryKey = true }
         fun default(value: T) = this.also { defaultValue = value }
 
-        private fun attributesToSql(): String = "PRIMARY KEY ".ifTrue(isPrimaryKey) +
+        protected open fun attributesToSql(): String = "PRIMARY KEY ".ifTrue(isPrimaryKey) +
                 "NOT NULL ".ifTrue(isNotNull) +
                 "UNIQUE ".ifTrue(isUnique) +
                 "DEFAULT $defaultValue".ifTrue(defaultValue != null && defaultValue !is String) +
@@ -126,8 +139,8 @@ abstract class Table<E : Entity>(
         fun <T> real(prop: KMutableProperty1<E, T>) = Column(prop, "real")
         fun <T> varchar(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(prop, "varchar($size)")
 
-        fun <T : Entity> reference(prop: KMutableProperty1<E, T?>, refTable: Table<T>) =
-            Column(prop, "integer", refTable)
+        fun <T : Entity> reference(prop: KMutableProperty1<E, T?>, refTable: Table<T>, onDelete: Action = Action.SetDefault) =
+            Reference(prop, refTable, onDelete)
 
         fun uniqueColumns(vararg props: KMutableProperty1<E, *>) {
             uniqueColumns.addAll(props.map { it.columnName })

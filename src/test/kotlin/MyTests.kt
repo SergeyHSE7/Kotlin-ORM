@@ -5,6 +5,7 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 import org.atteo.evo.inflector.English
 import org.postgresql.util.PSQLException
 import statements.delete
+import statements.deleteById
 import statements.selectAll
 import statements.update
 import utils.Case
@@ -123,6 +124,10 @@ class MyTests : FreeSpec({
             val human = HumanTable[1]!!
             human.followers.size shouldBeGreaterThan 0
             human.followers.first()?.id shouldBe 2
+        }
+        "References check" {
+            HumanTable.deleteById(2)
+            FollowerToFollowersTable.isEmpty() shouldBe true
         }
         "Json print" {
             val human = HumanTable[1]!!

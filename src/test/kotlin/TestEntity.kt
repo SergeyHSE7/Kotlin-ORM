@@ -57,8 +57,8 @@ data class FollowerToFollower(
 object FollowerToFollowersTable : Table<FollowerToFollower>(
     FollowerToFollower::class, true,
     {
-        reference(FollowerToFollower::follow, HumanTable)
-        reference(FollowerToFollower::follower, HumanTable)
+        reference(FollowerToFollower::follow, HumanTable, Action.Cascade)
+        reference(FollowerToFollower::follower, HumanTable, Action.Cascade)
     },
     listOf(FollowerToFollower(follow = Human(1), follower = Human(2)))
 )
