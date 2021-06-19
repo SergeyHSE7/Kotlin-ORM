@@ -8,22 +8,29 @@ import kotlin.reflect.full.memberProperties
 
 
 @Target(AnnotationTarget.PROPERTY)
-annotation class LazyProp
+annotation class Hidden
+
+@Target(AnnotationTarget.PROPERTY)
+annotation class FetchLazy
 
 
 fun Entity.toJsonWithout(vararg excludeProps: KProperty1<out Entity, *>): String =
-    this::class.memberProperties.excludeLazy().exclude(Entity::properties, *excludeProps)
+    this::class.memberProperties.excludeHidden().exclude(Entity::properties, *excludeProps)
         .joinToString(", ", "{", "}") { it.toJson(this) }
 
 fun Entity.toJsonOnly(vararg serializeProps: KProperty1<out Entity, *>) = serializeProps.toList()
     .joinToString(", ", "{", "}") { it.toJson(this) }
 
-fun Entity.toJson(all: Boolean = false): String = (if (all) this::class.memberProperties else properties.excludeLazy())
-    .exclude(Entity::properties)
-    .joinToString(", ", "{", "}") { it.toJson(this) }
+fun Entity.toJson(all: Boolean = false): String =
+    (if (all) this::class.memberProperties else properties.excludeHidden())
+        .exclude(Entity::properties)
+        .joinToString(", ", "{", "}") { it.toJson(this) }
 
 
-private fun KProperty1<out Entity, *>.toJson(entity: Entity) = "\"${name}\": ${returnValue(entity).toJson()}"
+
+private fun KProperty1<out Entity, *>.toJson(entity: Entity) = "\"${name}\": " +
+        if (hasAnnotation<FetchLazy>()) "{ \"id\": ${(returnValue(entity) as Entity).id} }"
+        else returnValue(entity).toJson()
 
 private fun Any?.toJson(): String = when (this) {
     is String -> "\"$this\""
@@ -32,9 +39,9 @@ private fun Any?.toJson(): String = when (this) {
     else -> toString()
 }
 
-private fun Iterable<KProperty1<out Entity, *>>.excludeLazy() =
+private fun Iterable<KProperty1<out Entity, *>>.excludeHidden() =
     toMutableList().apply {
-        removeAll { prop -> prop.hasAnnotation<LazyProp>() }
+        removeAll { prop -> prop.hasAnnotation<Hidden>() }
     }
 
 private fun Iterable<KProperty1<out Entity, *>>.exclude(vararg excludeProps: KProperty1<out Entity, *>) =

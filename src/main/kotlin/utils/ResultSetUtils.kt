@@ -8,6 +8,7 @@ import java.sql.ResultSet
 import java.sql.Time
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.hasAnnotation
 
 fun <E : Entity> ResultSet.getEntity(table: Table<E>, lazy: Boolean): E? = try {
     val entity: E = table.entityClass.createInstance()
@@ -28,7 +29,7 @@ fun <E : Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>, laz
     try {
         if (column.refTable != null) {
             val index = (getValue(column) as? String?)?.toIntOrNull() ?: return
-            val obj = if (lazy)
+            val obj = if (lazy || column.property.hasAnnotation<FetchLazy>())
                 column.refTable.entityClass.createInstance().apply { id = index }
             else column.refTable.findById(index, false)
 

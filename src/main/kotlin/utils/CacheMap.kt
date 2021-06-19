@@ -18,11 +18,11 @@ class CacheMap<E: Entity>(private val maxSize: Int) {
             remove(queue.first())
     }
 
-    operator fun get(key: Int, withReferences: Boolean = true) = if (withReferences || hashMap.containsKey(key)) hashMap[key] else hashMapLazy[key]
+    operator fun get(key: Int, withReferences: Boolean) = if (withReferences || hashMap.containsKey(key)) hashMap[key] else hashMapLazy[key]
 
-    fun add(entity: E, withReferences: Boolean = true) = set(entity.id, entity, withReferences)
+    fun add(entity: E, withReferences: Boolean) = set(entity.id, entity, withReferences)
 
-    fun addAll(list: List<E>, withReferences: Boolean = true) = list.takeLast(maxSize).forEach { set(it.id, it, withReferences) }
+    fun addAll(list: List<E>, withReferences: Boolean) = list.takeLast(maxSize).forEach { set(it.id, it, withReferences) }
 
     fun remove(key: Int) {
         hashMap.remove(key)

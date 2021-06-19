@@ -9,7 +9,11 @@ abstract class Entity {
     val properties by lazy { this::class.properties }
 
     fun compareValuesWith(other: Entity): Boolean =
-        properties.all { it.name == "id" || it.returnValue(this) == it.returnValue(other) }
+        properties.all { prop ->
+            prop.name == "id" || prop.returnValue(this).run {
+                if (this is Entity) id == (prop.returnValue(other) as Entity).id else this == prop.returnValue(other)
+            }
+        }
 
     fun <E : Entity> oneToMany(refTable: Table<E>?, keyProp: KMutableProperty1<E, *>) =
         ReadOnlyProperty<Any?, List<E>> { thisRef, _ ->

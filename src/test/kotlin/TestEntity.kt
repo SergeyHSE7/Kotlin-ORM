@@ -1,10 +1,12 @@
-import utils.LazyProp
+import utils.FetchLazy
+import utils.Hidden
 
 data class TestEntity(
     override var id: Int = 0,
     var string: String = "",
     var int: Int = 0,
     var int1: Int = 1,
+    @FetchLazy
     var human: Human? = null
 ) : Entity()
 
@@ -28,7 +30,7 @@ data class Human(
     var name: String = "---",
     var age: Int = 0,
 ) : Entity() {
-    @LazyProp
+    @Hidden
     val tests: List<TestEntity> by oneToMany(TestTable, TestEntity::human)
     val followers: List<Human?> by manyToMany(
         FollowerToFollowersTable,

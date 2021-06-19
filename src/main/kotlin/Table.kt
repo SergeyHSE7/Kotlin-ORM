@@ -37,11 +37,11 @@ abstract class Table<E : Entity>(
 
         if (refresh) dropTable()
         createTable()
-        addAll(defaultEntities)
+        add(defaultEntities)
     }
 
     fun defaultEntities(vararg entities: E) = defaultEntities(entities.toList())
-    fun defaultEntities(entities: List<E>) = this.apply { addAll(entities) }
+    fun defaultEntities(entities: List<E>) = this.apply { add(entities) }
 
     fun createTable() = create()
     fun dropTable() = drop()
@@ -52,9 +52,9 @@ abstract class Table<E : Entity>(
         add(entity)
     }
 
-    fun add(entity: E): Int? = insert(entity).getId()//?.apply { cache[this] = entity }
-    fun addAll(entities: List<E>): List<Int> = insert(entities).getIds()//.apply {forEach { cache[this] = entity }
-    fun addAll(vararg entities: E): List<Int> = addAll(entities.toList())
+    fun add(entity: E): Int? = insert(entity).getId()
+    fun add(entities: List<E>): List<Int> = insert(entities).getIds()
+    fun add(vararg entities: E): List<Int> = add(entities.toList())
 
     operator fun get(id: Int): E? = findById(id)
     operator fun contains(entity: E): Boolean = selectAll().apply {
@@ -69,7 +69,10 @@ abstract class Table<E : Entity>(
         .apply { if (!loadReferences) lazy() }.getEntities()
     fun find(loadReferences: Boolean = true, condition: WhereCondition): E? = selectAll().where(condition)
         .apply { if (!loadReferences) lazy() }.getEntity()
-    fun findById(id: Int, loadReferences: Boolean = true): E? = cache[id, loadReferences] ?: find(loadReferences) { Entity::id eq id }
+
+    fun findById(id: Int, loadReferences: Boolean = true): E? =
+        cache[id, loadReferences] ?: find(loadReferences) { Entity::id eq id }
+
     fun findIdOf(condition: WhereCondition): Int? = select("id").where(condition).getEntity()?.id
 
     operator fun set(id: Int, entity: E) = update(entity) { this.id = id }
@@ -77,13 +80,18 @@ abstract class Table<E : Entity>(
         func(entity)
         update(entity)
     }
+    fun update(entities: List<E>) = entities.forEach { update(it) }
 
     operator fun minusAssign(entity: E) = delete(entity)
     fun delete(entity: E) = deleteById(entity.id)
 
     fun <T> getValuesOfColumn(prop: KMutableProperty1<E, T>): List<T> = select(prop).getEntities().map(prop)
 
-    inner class Reference<R : Entity>(property: KMutableProperty1<E, R?>, refTable: Table<out Entity>, val onDelete: Action) :
+    inner class Reference<R : Entity>(
+        property: KMutableProperty1<E, R?>,
+        refTable: Table<out Entity>,
+        val onDelete: Action
+    ) :
         Column<R?>(property, "integer", refTable) {
 
         override fun attributesToSql(): String =
@@ -140,7 +148,11 @@ abstract class Table<E : Entity>(
         fun <T> real(prop: KMutableProperty1<E, T>) = Column(prop, "real")
         fun <T> varchar(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(prop, "varchar($size)")
 
-        fun <T : Entity> reference(prop: KMutableProperty1<E, T?>, refTable: Table<T>, onDelete: Action = Action.SetDefault) =
+        fun <T : Entity> reference(
+            prop: KMutableProperty1<E, T?>,
+            refTable: Table<T>,
+            onDelete: Action = Action.SetDefault
+        ) =
             Reference(prop, refTable, onDelete)
 
         fun uniqueColumns(vararg props: KMutableProperty1<E, *>) {

@@ -68,7 +68,6 @@ class MyTests : FreeSpec({
             TestTable.all().forEach(::println)
             TestTable.size shouldBe defaultTestEntities.size
 
-            TestTable[2] shouldBe defaultTestEntities[1].apply { id = 2 }
             TestTable[2]?.compareValuesWith(defaultTestEntities[1]) shouldBe true
             TestTable[100] shouldBe null
 
@@ -106,11 +105,11 @@ class MyTests : FreeSpec({
                 string = "updateStr2"
                 human = human?.copy(age = 40)
             }
-            TestTable[2]!! shouldBe entity
+            TestTable[2]!!.compareValuesWith(entity) shouldBe true
             HumanTable[1]!!.age shouldBe 40
 
             TestTable[5] = entity
-            TestTable[2]!! shouldBe entity.copy(id = 2)
+            TestTable[2]!!.compareValuesWith(entity) shouldBe true
         }
         "One To Many check" {
             val human = HumanTable[1]!!
@@ -130,7 +129,7 @@ class MyTests : FreeSpec({
             val human = HumanTable[1]!!
             println("toJson() - " + human.toJson())
             println("toJson(all = true) - " + human.toJson(true))
-            println("toJsonOnly() - " + human.toJsonOnly(Human::name, Human::followers))
+            println("toJsonOnly() - " + human.toJsonOnly(Human::name, Human::followers, Human::tests))
             println("toJsonWithout() - " + human.toJsonWithout(Human::name, Human::followers))
         }
         "Lazy" {
@@ -138,9 +137,6 @@ class MyTests : FreeSpec({
             TestTable.cache.clear()
             println(TestTable.findById(2, false)!!.toJsonOnly(TestEntity::human))
             println(TestTable[2]!!.toJsonOnly(TestEntity::human))
-
-            println(TestTable.findAll { TestEntity::id eq 2 }.first().toJsonOnly(TestEntity::human))
-            println(TestTable.findAll(false) { TestEntity::id eq 2 }.first().toJsonOnly(TestEntity::human))
         }
     }
 })
