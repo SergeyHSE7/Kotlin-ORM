@@ -64,10 +64,12 @@ abstract class Table<E : Entity>(
         }
     }.getEntity() != null
 
-    fun all(): List<E> = selectAll().getEntities()
-    fun findAll(condition: WhereCondition): List<E> = selectAll().where(condition).getEntities()
-    fun find(condition: WhereCondition): E? = selectAll().where(condition).getEntity()
-    fun findById(id: Int): E? = cache[id] ?: find { Entity::id eq id }
+    fun all(loadReferences: Boolean = true): List<E> = selectAll().apply { if (!loadReferences) lazy() }.getEntities()
+    fun findAll(loadReferences: Boolean = true, condition: WhereCondition): List<E> = selectAll().where(condition)
+        .apply { if (!loadReferences) lazy() }.getEntities()
+    fun find(loadReferences: Boolean = true, condition: WhereCondition): E? = selectAll().where(condition)
+        .apply { if (!loadReferences) lazy() }.getEntity()
+    fun findById(id: Int, loadReferences: Boolean = true): E? = cache[id, loadReferences] ?: find(loadReferences) { Entity::id eq id }
     fun findIdOf(condition: WhereCondition): Int? = select("id").where(condition).getEntity()?.id
 
     operator fun set(id: Int, entity: E) = update(entity) { this.id = id }
@@ -78,7 +80,6 @@ abstract class Table<E : Entity>(
 
     operator fun minusAssign(entity: E) = delete(entity)
     fun delete(entity: E) = deleteById(entity.id)
-
 
     fun <T> getValuesOfColumn(prop: KMutableProperty1<E, T>): List<T> = select(prop).getEntities().map(prop)
 

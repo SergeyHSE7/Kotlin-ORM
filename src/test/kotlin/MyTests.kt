@@ -4,10 +4,7 @@ import io.kotest.matchers.*
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import org.atteo.evo.inflector.English
 import org.postgresql.util.PSQLException
-import statements.delete
-import statements.deleteById
-import statements.selectAll
-import statements.update
+import statements.*
 import utils.Case
 import utils.*
 
@@ -135,6 +132,15 @@ class MyTests : FreeSpec({
             println("toJson(all = true) - " + human.toJson(true))
             println("toJsonOnly() - " + human.toJsonOnly(Human::name, Human::followers))
             println("toJsonWithout() - " + human.toJsonWithout(Human::name, Human::followers))
+        }
+        "Lazy" {
+            println(TestTable.findById(2, false)!!.toJsonOnly(TestEntity::human))
+            TestTable.cache.clear()
+            println(TestTable.findById(2, false)!!.toJsonOnly(TestEntity::human))
+            println(TestTable[2]!!.toJsonOnly(TestEntity::human))
+
+            println(TestTable.findAll { TestEntity::id eq 2 }.first().toJsonOnly(TestEntity::human))
+            println(TestTable.findAll(false) { TestEntity::id eq 2 }.first().toJsonOnly(TestEntity::human))
         }
     }
 })

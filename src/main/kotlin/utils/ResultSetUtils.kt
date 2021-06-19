@@ -9,28 +9,31 @@ import java.sql.Time
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.createInstance
 
-fun <E : Entity> ResultSet.getEntity(table: Table<E>): E? = try {
+fun <E : Entity> ResultSet.getEntity(table: Table<E>, lazy: Boolean): E? = try {
     val entity: E = table.entityClass.createInstance()
-    table.columns.forEach { setProp(entity, it) }
+    table.columns.forEach { setProp(entity, it, lazy) }
     entity
 } catch (ex: PSQLException) {
     if (ex.message?.contains("next") == true && next()) {
         println("next")
-        getEntity(table)
+        getEntity(table, lazy)
     }
     null
 }
 
-fun <E: Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>) {
+fun <E : Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>, lazy: Boolean) {
     val prop = entity.properties.firstOrNull { it.name == column.property.name }
             as? KMutableProperty1<E, T> ?: return
 
     try {
         if (column.refTable != null) {
             val index = (getValue(column) as? String?)?.toIntOrNull() ?: return
-            prop.set(entity, column.refTable.findById(index) as T)
-        }
-        else prop.set(entity, getValue(column))
+            val obj = if (lazy)
+                column.refTable.entityClass.createInstance().apply { id = index }
+            else column.refTable.findById(index, false)
+
+            prop.set(entity, obj as T)
+        } else prop.set(entity, getValue(column))
 
     } catch (ex: PSQLException) {
         if (ex.message?.contains("не найдено") == false)
@@ -38,17 +41,18 @@ fun <E: Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>) {
     }
 }
 
-fun <E: Entity, T> ResultSet.getValue(column: Table<E>.Column<T>): T = when (column.property.get(column.entityClass.createInstance())) {
-    is String? -> getString(column.name)
-    is Int? -> getInt(column.name)
-    is Boolean? -> getBoolean(column.name)
-    is Date? -> getDate(column.name)
-    is Float? -> getFloat(column.name)
-    is Double? -> getDouble(column.name)
-    is Time? -> getTime(column.name)
-    is Entity? -> getInt(column.name)
-    else -> throw java.lang.Exception("Unknown type: ${column.property.name}")
-} as T
+fun <E : Entity, T> ResultSet.getValue(column: Table<E>.Column<T>): T =
+    when (column.property.get(column.entityClass.createInstance())) {
+        is String? -> getString(column.name)
+        is Int? -> getInt(column.name)
+        is Boolean? -> getBoolean(column.name)
+        is Date? -> getDate(column.name)
+        is Float? -> getFloat(column.name)
+        is Double? -> getDouble(column.name)
+        is Time? -> getTime(column.name)
+        is Entity? -> getInt(column.name)
+        else -> throw java.lang.Exception("Unknown type: ${column.property.name}")
+    } as T
 
 
 fun <T> ResultSet.map(func: ResultSet.() -> T?): List<T> {

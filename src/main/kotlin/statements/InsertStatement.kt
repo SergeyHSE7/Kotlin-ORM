@@ -12,6 +12,7 @@ fun <E : Entity> Table<E>.insert(vararg insertEntities: E) = insert(insertEntiti
 fun <E : Entity> Table<E>.insert(insertEntities: List<E>) = InsertStatement(this, insertEntities)
 
 class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: List<E> = listOf()) {
+    private var lazy: Boolean = false
     private val props = table.columns.map { it.property }.filter { it.name != "id" }
     private var getEntity = false
     private val entities: MutableList<E> = insertEntities.toMutableList()
@@ -19,19 +20,21 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
     fun add(objects: List<E>) = this.apply { entities.addAll(objects) }
     fun add(vararg objects: E) = this.apply { entities.addAll(objects) }
 
+    fun lazy() = this.apply { lazy = true }
+
     fun getId(): Int? = getIds().firstOrNull()
     fun getIds(): List<Int> = getPreparedStatement().executeQuery().map { getInt("id").also { table.cache.remove(it) } }
 
     private fun getEntity(): E? {
         getEntity = true
         return getPreparedStatement(listOf(entities.removeAt(0))).executeQuery()
-            .getEntity(table)?.also { table.cache += it }
+            .getEntity(table, lazy)?.also { table.cache.add(it, !lazy) }
     }
 
     fun getEntities(): List<E> {
         getEntity = true
         return try {
-            getPreparedStatement().executeQuery().map { getEntity(table) }
+            getPreparedStatement().executeQuery().map { getEntity(table, lazy) }
         } catch (ex: Exception) {
             val list = mutableListOf<E?>()
             kotlin.runCatching { list.add(getEntity()) }

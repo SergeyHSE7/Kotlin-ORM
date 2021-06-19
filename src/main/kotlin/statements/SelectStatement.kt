@@ -21,6 +21,7 @@ class SelectStatement<E : Entity>(
     columns: List<String> = listOf(),
     private val selectAll: Boolean = false
 ) {
+    private var lazy: Boolean = false
     private var limit: Int? = null
     private var offset: Int? = null
     private val columns = columns.toMutableSet()
@@ -28,6 +29,8 @@ class SelectStatement<E : Entity>(
     private var whereStatement: WhereStatement = WhereStatement()
 
     fun where(conditionBody: WhereCondition?) = this.apply { whereStatement.addCondition(conditionBody) }
+
+    fun lazy() = this.apply { lazy = true }
 
     fun orderBy(vararg props: KMutableProperty1<E, *>) =
         this.apply { orderColumns.addAll(props.map { OrderColumn(it.columnName) }) }
@@ -39,16 +42,16 @@ class SelectStatement<E : Entity>(
     fun offset(offset: Int) = this.apply { this.offset = offset }
 
     fun getEntity(): E? = database.executeQuery(getSql())
-        .apply { next() }.getEntity(table)
+        .apply { next() }.getEntity(table, lazy)
         .also {
-            if (selectAll && it != null) table.cache += it
+            if (selectAll && it != null) table.cache.add(it, !lazy)
             println(getSql())
         }
 
     fun getEntities(): List<E> = database.executeQuery(getSql())
-        .map { getEntity(table) }
+        .map { getEntity(table, lazy) }
         .also {
-            if (selectAll) table.cache.addAll(it)
+            if (selectAll) table.cache.addAll(it, !lazy)
             println(getSql())
         }
 
