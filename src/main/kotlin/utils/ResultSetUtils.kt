@@ -10,16 +10,10 @@ import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.hasAnnotation
 
-fun <E : Entity> ResultSet.getEntity(table: Table<E>, lazy: Boolean): E? = try {
+fun <E : Entity> ResultSet.getEntity(table: Table<E>, lazy: Boolean): E {
     val entity: E = table.entityClass.createInstance()
     table.columns.forEach { setProp(entity, it, lazy) }
-    entity
-} catch (ex: PSQLException) {
-    if (ex.message?.contains("next") == true && next()) {
-        println("next")
-        getEntity(table, lazy)
-    }
-    null
+    return entity
 }
 
 fun <E : Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>, lazy: Boolean) {

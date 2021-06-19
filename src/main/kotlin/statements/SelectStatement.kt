@@ -42,7 +42,7 @@ class SelectStatement<E : Entity>(
     fun offset(offset: Int) = this.apply { this.offset = offset }
 
     fun getEntity(): E? = database.executeQuery(getSql())
-        .apply { next() }.getEntity(table, lazy)
+        .run { if (next()) getEntity(table, lazy) else null }
         .also {
             if (selectAll && it != null) table.cache.add(it, !lazy)
             println(getSql())
