@@ -109,7 +109,7 @@ abstract class Table<E : Entity>(
         private val sqlType: String,
         val refTable: Table<out Entity>? = null
     ) {
-        var name: String = property.columnName
+        val name: String = property.columnName
         val entityClass = this@Table.entityClass
         private var defaultValue: T? = null
         private var isNotNull = false

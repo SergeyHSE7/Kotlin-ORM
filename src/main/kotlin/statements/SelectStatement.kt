@@ -5,6 +5,7 @@ import Table
 import columnName
 import database
 import utils.*
+import java.sql.ResultSet
 import kotlin.reflect.KMutableProperty1
 
 data class OrderColumn(val column: String, val isDescending: Boolean = false)
@@ -13,7 +14,7 @@ fun <E : Entity> Table<E>.selectAll(): SelectStatement<E> = SelectStatement(this
 fun <E : Entity> Table<E>.select(vararg propsNames: String): SelectStatement<E> =
     SelectStatement(this, propsNames.toList())
 
-fun <E : Entity> Table<E>.select(vararg props: KMutableProperty1<E, *>): SelectStatement<E> =
+fun <E : Entity> Table<E>.select(vararg props: KMutableProperty1<*, *>): SelectStatement<E> =
     SelectStatement(this, props.map { prop -> prop.columnName })
 
 class SelectStatement<E : Entity>(
@@ -21,14 +22,21 @@ class SelectStatement<E : Entity>(
     columns: List<String> = listOf(),
     private val selectAll: Boolean = false
 ) {
+    enum class JoinType {
+        Inner, Left, Right, Full, Cross
+    }
+    data class JoinTable(val joinType: JoinType, val table: Table<*>, val condition: String)
     private var lazy: Boolean = false
     private var limit: Int? = null
     private var offset: Int? = null
+    private val joinTables = mutableListOf<JoinTable>()
     private val columns = columns.toMutableSet()
     private val orderColumns = mutableSetOf<OrderColumn>()
     private var whereStatement: WhereStatement = WhereStatement()
 
     fun where(conditionBody: WhereCondition?) = this.apply { whereStatement.addCondition(conditionBody) }
+    fun innerJoin(joinTable: Table<*>, condition: WhereCondition) =
+        this.apply { joinTables.add(JoinTable(JoinType.Inner, joinTable, WhereStatement().condition())) }
 
     fun lazy() = this.apply { lazy = true }
 
@@ -40,6 +48,9 @@ class SelectStatement<E : Entity>(
 
     fun limit(limit: Int) = this.apply { this.limit = limit }
     fun offset(offset: Int) = this.apply { this.offset = offset }
+
+    fun getResultSet(): ResultSet = database.executeQuery(getSql())
+        .also { println(getSql()) }
 
     fun getEntity(): E? = database.executeQuery(getSql())
         .run { if (next()) getEntity(table, lazy) else null }
@@ -58,6 +69,7 @@ class SelectStatement<E : Entity>(
     fun getSql(): String =
         "SELECT ${if (selectAll) "*" else columns.apply { addAll(whereStatement.columns) }.joinToString { it }} " +
                 "FROM ${table.tableName}" +
+                joinTables.joinToString("") { joinTable ->  " JOIN ${joinTable.table.tableName} ON ${joinTable.condition}" } +
                 whereStatement.getSql() +
                 (" ORDER BY " + orderColumns.joinToString { it.column + if (it.isDescending) " DESC" else " ASC" })
                     .ifTrue(orderColumns.isNotEmpty()) +

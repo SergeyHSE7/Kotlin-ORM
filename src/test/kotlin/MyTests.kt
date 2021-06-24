@@ -121,6 +121,12 @@ class MyTests : FreeSpec({
             human.followers.size shouldBeGreaterThan 0
             human.followers.first()?.id shouldBe 2
         }
+        "Lazy" {
+            println(FollowerToFollowersTable.findById(1, false)!!.toJson())
+            FollowerToFollowersTable.cache.clear()
+            println(FollowerToFollowersTable.findById(1, false)!!.toJson())
+            println(FollowerToFollowersTable[1]!!.toJson())
+        }
         "References check" {
             HumanTable.deleteById(2)
             FollowerToFollowersTable.isEmpty() shouldBe true
@@ -132,11 +138,10 @@ class MyTests : FreeSpec({
             println("toJsonOnly() - " + human.toJsonOnly(Human::name, Human::followers, Human::tests))
             println("toJsonWithout() - " + human.toJsonWithout(Human::name, Human::followers))
         }
-        "Lazy" {
-            println(TestTable.findById(2, false)!!.toJsonOnly(TestEntity::human))
-            TestTable.cache.clear()
-            println(TestTable.findById(2, false)!!.toJsonOnly(TestEntity::human))
-            println(TestTable[2]!!.toJsonOnly(TestEntity::human))
+        "Join" {
+            println(TestTable[2]!!.human)
+            TestTable.select(Human::name, Human::age).innerJoin(HumanTable) { TestEntity::human eq Human::id }.getResultSet()
+                .map { getString("name") + " - " + getInt("age") }.forEach(::println)
         }
     }
 })

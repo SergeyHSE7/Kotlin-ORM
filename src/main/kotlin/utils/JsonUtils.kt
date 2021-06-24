@@ -27,9 +27,9 @@ fun Entity.toJson(all: Boolean = false): String =
         .joinToString(", ", "{", "}") { it.toJson(this) }
 
 
-
 private fun KProperty1<out Entity, *>.toJson(entity: Entity) = "\"${name}\": " +
-        if (hasAnnotation<FetchLazy>()) "{ \"id\": ${(returnValue(entity) as Entity).id} }"
+        if (hasAnnotation<FetchLazy>() && returnValue(entity) != null)
+            "{ \"id\": ${(returnValue(entity) as Entity).id} }"
         else returnValue(entity).toJson()
 
 private fun Any?.toJson(): String = when (this) {
