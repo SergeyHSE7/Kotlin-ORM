@@ -7,6 +7,7 @@ import org.postgresql.util.PSQLException
 import statements.*
 import utils.Case
 import utils.*
+import kotlin.system.measureNanoTime
 
 /*val database: Database = Database(
     url = "jdbc:postgresql://localhost:5432/FinAssistant",
@@ -14,20 +15,33 @@ import utils.*
     password = "123456"
 )*/
 
+fun <T> printMeasureTime(proccessName: String = "", func: () -> T): T {
+    var value: T
+    println("$proccessName - ".ifTrue(proccessName.isNotBlank()) + measureNanoTime {
+        value = func()
+    } / 1000000.0 + "ms")
+    return value
+}
+
+
 class MyTests : FreeSpec({
     "!string transform utils check" - {
         "plural library check" {
-            English.plural("word") shouldBe "words"
-            English.plural("box") shouldBe "boxes"
-            English.plural("entity") shouldBe "entities"
-            English.plural("mouse") shouldBe "mice"
-            English.plural("elf") shouldBe "elves"
+            printMeasureTime {
+                English.plural("word") shouldBe "words"
+                English.plural("box") shouldBe "boxes"
+                English.plural("entity") shouldBe "entities"
+                English.plural("mouse") shouldBe "mice"
+                English.plural("elf") shouldBe "elves"
+            }
         }
         "splitByCase check" {
-            "PascalCase".transformCase(Case.Pascal, Case.Normal) shouldBe "Pascal Case"
-            "camelCase".transformCase(Case.Camel, Case.Normal) shouldBe "Camel Case"
-            "snake_case".transformCase(Case.Snake, Case.Normal) shouldBe "Snake Case"
-            "kebab-case".transformCase(Case.Kebab, Case.Normal) shouldBe "Kebab Case"
+            printMeasureTime {
+                "PascalCase".transformCase(Case.Pascal, Case.Normal) shouldBe "Pascal Case"
+                "camelCase".transformCase(Case.Camel, Case.Normal) shouldBe "Camel Case"
+                "snake_case".transformCase(Case.Snake, Case.Normal) shouldBe "Snake Case"
+                "kebab-case".transformCase(Case.Kebab, Case.Normal) shouldBe "Kebab Case"
+            }
         }
         "joinWithCase check" {
             "Pascal Case".transformCase(Case.Normal, Case.Pascal) shouldBe "PascalCase"

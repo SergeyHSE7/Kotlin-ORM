@@ -30,6 +30,7 @@ abstract class Table<E : Entity>(
 
     init {
         with(CreateMethods()) {
+            @Suppress("UNCHECKED_CAST")
             serial(entityClass.properties.first { it.name == "id" } as KMutableProperty1<E, Int>).primaryKey()
             columnsBody()
         }
