@@ -25,7 +25,11 @@ class SelectStatement<E : Entity>(
     enum class JoinType {
         Inner, Left, Right, Full, Cross
     }
-    data class JoinTable(val joinType: JoinType, val table: Table<*>, val condition: String)
+    data class JoinTable(val joinType: JoinType, val table: Table<*>, val condition: WhereCondition) {
+        override fun toString(): String = if (joinType == JoinType.Cross) " CROSS JOIN ${table.tableName}"
+        else " ${joinType.name.uppercase()} JOIN ${table.tableName} ON ${WhereStatement().condition()}"
+    }
+
     private var lazy: Boolean = false
     private var limit: Int? = null
     private var offset: Int? = null
@@ -36,7 +40,7 @@ class SelectStatement<E : Entity>(
 
     fun where(conditionBody: WhereCondition?) = this.apply { whereStatement.addCondition(conditionBody) }
     fun innerJoin(joinTable: Table<*>, condition: WhereCondition) =
-        this.apply { joinTables.add(JoinTable(JoinType.Inner, joinTable, WhereStatement().condition())) }
+        this.apply { joinTables.add(JoinTable(JoinType.Inner, joinTable, condition)) }
 
     fun lazy() = this.apply { lazy = true }
 
@@ -69,7 +73,7 @@ class SelectStatement<E : Entity>(
     fun getSql(): String =
         "SELECT ${if (selectAll) "*" else columns.apply { addAll(whereStatement.columns) }.joinToString { it }} " +
                 "FROM ${table.tableName}" +
-                joinTables.joinToString("") { joinTable ->  " JOIN ${joinTable.table.tableName} ON ${joinTable.condition}" } +
+                joinTables.joinToString("") +
                 whereStatement.getSql() +
                 (" ORDER BY " + orderColumns.joinToString { it.column + if (it.isDescending) " DESC" else " ASC" })
                     .ifTrue(orderColumns.isNotEmpty()) +
