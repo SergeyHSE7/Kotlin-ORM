@@ -1,8 +1,5 @@
 import statements.*
-import utils.CacheMap
-import utils.Case
-import utils.ifTrue
-import utils.transformCase
+import utils.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 
@@ -34,7 +31,6 @@ abstract class Table<E : Entity>(
             serial(entityClass.properties.first { it.name == "id" } as KMutableProperty1<E, Int>).primaryKey()
             columnsBody()
         }
-
 
         if (refresh) dropTable()
         createTable()
@@ -77,7 +73,7 @@ abstract class Table<E : Entity>(
     fun findIdOf(condition: WhereCondition): Int? = select("id").where(condition).getEntity()?.id
 
     operator fun set(id: Int, entity: E) = update(entity) { this.id = id }
-    fun update(entity: E, func: E.() -> Unit) {
+    inline fun update(entity: E, func: E.() -> Unit) {
         func(entity)
         update(entity)
     }

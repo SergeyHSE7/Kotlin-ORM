@@ -9,11 +9,6 @@ import utils.Case
 import utils.*
 import kotlin.system.measureNanoTime
 
-/*val database: Database = Database(
-    url = "jdbc:postgresql://localhost:5432/FinAssistant",
-    user = "postgres",
-    password = "123456"
-)*/
 
 fun <T> printMeasureTime(proccessName: String = "", func: () -> T): T {
     var value: T

@@ -1,7 +1,6 @@
 package utils
 
 import Entity
-import returnValue
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberProperties

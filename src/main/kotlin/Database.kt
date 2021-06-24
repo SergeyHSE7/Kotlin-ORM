@@ -3,6 +3,12 @@ import java.sql.DriverManager
 import java.sql.ResultSet
 import java.sql.SQLException
 
+val database: Database = Database(
+    url = "jdbc:postgresql://localhost:5432/FinAssistant",
+    user = "postgres",
+    password = "123456"
+)
+
 class Database(
     url: String,
     user: String,

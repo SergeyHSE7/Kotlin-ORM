@@ -1,7 +1,7 @@
 package statements
 
-import columnName
-import fullColumnName
+import utils.columnName
+import utils.fullColumnName
 import utils.Case
 import utils.transformCase
 import kotlin.reflect.KMutableProperty1

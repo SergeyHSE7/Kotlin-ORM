@@ -1,5 +1,6 @@
-import utils.Case
-import utils.transformCase
+package utils
+
+import Entity
 import kotlin.jvm.internal.MutablePropertyReference1
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1

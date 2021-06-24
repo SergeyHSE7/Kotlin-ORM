@@ -2,11 +2,9 @@ package statements
 
 import Entity
 import Table
-import columnName
+import utils.columnName
 import database
-import returnValue
-import utils.Case
-import utils.transformCase
+import utils.returnValue
 import kotlin.reflect.KMutableProperty1
 
 fun <E : Entity> Table<out E>.update(entity: E, vararg props: KMutableProperty1<E, *>) =

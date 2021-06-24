@@ -2,7 +2,7 @@ package statements
 
 import Entity
 import Table
-import columnName
+import utils.columnName
 import database
 import utils.*
 import java.sql.ResultSet
@@ -79,7 +79,6 @@ class SelectStatement<E : Entity>(
                     .ifTrue(orderColumns.isNotEmpty()) +
                 " LIMIT $limit".ifTrue(limit != null) +
                 " OFFSET $offset".ifTrue(offset != null)
-
 
 }
 

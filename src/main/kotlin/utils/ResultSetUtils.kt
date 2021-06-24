@@ -50,7 +50,7 @@ fun <E : Entity, T> ResultSet.getValue(column: Table<E>.Column<T>): T =
     } as T
 
 
-fun <T> ResultSet.map(func: ResultSet.() -> T?): List<T> {
+inline fun <T> ResultSet.map(func: ResultSet.() -> T?): List<T> {
     val list = mutableListOf<T?>()
     while (next()) list.add(func(this))
     return list.mapNotNull { it }
