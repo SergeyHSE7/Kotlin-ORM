@@ -1,12 +1,12 @@
 import statements.*
 import utils.*
+import java.math.BigDecimal
+import java.sql.Date
+import java.sql.Time
+import java.sql.Timestamp
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 
-/*inline fun <reified E : Entity> table(
-    refresh: Boolean = false,
-    noinline columnsBody: Table<E>.() -> Unit = {}
-): Table<E> = object : Table<E>(E::class, refresh, columnsBody) {}*/
 
 abstract class Table<E : Entity>(
     val entityClass: KClass<E>,
@@ -49,9 +49,11 @@ abstract class Table<E : Entity>(
         add(entity)
     }
 
-    fun add(entity: E): Int? = insert(entity).getId()
-    fun add(entities: List<E>): List<Int> = insert(entities).getIds()
+    fun add(entity: E): Int? = insert(entity).getId()?.apply { entity.id = this }
     fun add(vararg entities: E): List<Int> = add(entities.toList())
+    fun add(entities: List<E>): List<Int> = insert(entities).getIds()
+        .apply { forEachIndexed { index, id -> entities[index].id = id } }
+
 
     operator fun get(id: Int): E? = findById(id)
     operator fun contains(entity: E): Boolean = selectAll().apply {
@@ -64,6 +66,7 @@ abstract class Table<E : Entity>(
     fun all(loadReferences: Boolean = true): List<E> = selectAll().apply { if (!loadReferences) lazy() }.getEntities()
     fun findAll(loadReferences: Boolean = true, condition: WhereCondition): List<E> = selectAll().where(condition)
         .apply { if (!loadReferences) lazy() }.getEntities()
+
     fun find(loadReferences: Boolean = true, condition: WhereCondition): E? = selectAll().where(condition)
         .apply { if (!loadReferences) lazy() }.getEntity()
 
@@ -77,6 +80,7 @@ abstract class Table<E : Entity>(
         func(entity)
         update(entity)
     }
+
     fun update(entities: List<E>) = entities.forEach { update(it) }
 
     operator fun minusAssign(entity: E) = delete(entity)
@@ -92,7 +96,7 @@ abstract class Table<E : Entity>(
         Column<R?>(property, "integer", refTable) {
 
         override fun attributesToSql(): String =
-            super.attributesToSql() + " REFERENCES ${refTable!!.tableName} (id) ON DELETE " +
+            super.attributesToSql() + "REFERENCES ${refTable!!.tableName} (id) ON DELETE " +
                     onDelete.name.transformCase(Case.Pascal, Case.Normal).uppercase()
 
     }
@@ -103,7 +107,7 @@ abstract class Table<E : Entity>(
 
     open inner class Column<T>(
         val property: KMutableProperty1<E, T>,
-        private val sqlType: String,
+        val sqlType: String,
         val refTable: Table<out Entity>? = null
     ) {
         val name: String = property.columnName
@@ -140,10 +144,39 @@ abstract class Table<E : Entity>(
     }
 
     inner class CreateMethods {
-        fun <T> serial(prop: KMutableProperty1<E, T>) = Column(prop, "serial")
-        fun <T> integer(prop: KMutableProperty1<E, T>) = Column(prop, "integer")
-        fun <T> real(prop: KMutableProperty1<E, T>) = Column(prop, "real")
-        fun <T> varchar(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(prop, "varchar($size)")
+        fun <T : Int?> serial(prop: KMutableProperty1<E, T>) = Column(prop, "serial")
+
+        fun <T : BigDecimal?> decimal(prop: KMutableProperty1<E, T>, precision: Int, scale: Int) =
+            Column(prop, "decimal($precision, $scale)")
+
+        fun <T : BigDecimal?> numeric(prop: KMutableProperty1<E, T>, precision: Int, scale: Int) =
+            Column(prop, "numeric($precision, $scale)")
+
+        fun <T : Long?> bigint(prop: KMutableProperty1<E, T>) = Column(prop, "bigint")
+        fun <T : Int?> int(prop: KMutableProperty1<E, T>) = Column(prop, "integer")
+        fun <T : Short?> smallint(prop: KMutableProperty1<E, T>) = Column(prop, "smallint")
+        fun <T : UByte?> tinyint(prop: KMutableProperty1<E, T>) = Column(prop, "tinyint")
+
+        fun <T : Boolean?> bool(prop: KMutableProperty1<E, T>) = Column(prop, "boolean")
+
+        fun <T : Double?> double(prop: KMutableProperty1<E, T>) = Column(prop, "double precision")
+        fun <T : Float?> real(prop: KMutableProperty1<E, T>) = Column(prop, "real")
+
+        fun <T : String?> varchar(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(prop, "varchar($size)")
+        fun <T : String?> char(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(prop, "char($size)")
+        fun <T : String?> text(prop: KMutableProperty1<E, T>) = Column(prop, "text")
+
+        fun <T : String?> json(prop: KMutableProperty1<E, T>) = Column(prop, "json")
+        fun <T : String?> uuid(prop: KMutableProperty1<E, T>) = Column(prop, "uuid")
+
+
+        fun <T : Date?> date(prop: KMutableProperty1<E, T>) = Column(prop, "date")
+        fun <T : Time?> time(prop: KMutableProperty1<E, T>, withTimeZone: Boolean = false) =
+            Column(prop, "time" + " with time zone".ifTrue(withTimeZone))
+
+        fun <T : Timestamp?> timestamp(prop: KMutableProperty1<E, T>, withTimeZone: Boolean = false) =
+            Column(prop, "timestamp" + " with time zone".ifTrue(withTimeZone))
+
 
         fun <T : Entity> reference(
             prop: KMutableProperty1<E, T?>,

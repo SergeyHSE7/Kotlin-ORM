@@ -22,7 +22,7 @@ fun <E : Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>, laz
 
     try {
         if (column.refTable != null) {
-            val index = (getValue(column) as? String?)?.toIntOrNull() ?: return
+            val index = getValue(column) as? Int ?: return
             val obj = if (lazy || column.property.hasAnnotation<FetchLazy>())
                 column.refTable.entityClass.createInstance().apply { id = index }
             else column.refTable.findById(index, false)
@@ -36,17 +36,24 @@ fun <E : Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>, laz
     }
 }
 
+private operator fun Regex.contains(text: CharSequence): Boolean = this.matches(text)
+
 fun <E : Entity, T> ResultSet.getValue(column: Table<E>.Column<T>): T =
-    when (column.property.get(column.entityClass.createInstance())) {
-        is String? -> getString(column.name)
-        is Int? -> getInt(column.name)
-        is Boolean? -> getBoolean(column.name)
-        is Date? -> getDate(column.name)
-        is Float? -> getFloat(column.name)
-        is Double? -> getDouble(column.name)
-        is Time? -> getTime(column.name)
-        is Entity? -> getInt(column.name)
-        else -> throw java.lang.Exception("Unknown type: ${column.property.name}")
+    when (column.sqlType) {
+        in Regex("""decimal\.*"""), in Regex("""numeric\.*""") -> getBigDecimal(column.name)
+        in Regex("""varchar\(\d+\)"""), in Regex("""char\(\d+\)"""),
+        "text", "json", "uuid" -> getString(column.name)
+        "bigint" -> getLong(column.name)
+        "integer", "serial" -> getInt(column.name)
+        "smallint" -> getShort(column.name)
+        "tinyint" -> getShort(column.name).toUByte()
+        "double precision" -> getDouble(column.name)
+        "real" -> getFloat(column.name)
+        "boolean" -> getBoolean(column.name)
+        "date" -> getDate(column.name)
+        in Regex("""timestamp\.*""") -> getTimestamp(column.name)
+        in Regex("""time\.*""") -> getTime(column.name)
+        else -> throw java.lang.Exception("Unknown type: ${column.property.name} - ${column.sqlType}")
     } as T
 
 

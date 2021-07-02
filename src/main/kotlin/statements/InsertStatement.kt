@@ -50,10 +50,10 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
             .apply {
                 set(entities.flatMap { entity ->
                     props.map {
-                        val value = it.get(entity)
-                        if (value is Entity)
-                            value.id
-                        else value
+                        when (val value = it.get(entity)) {
+                            is Entity -> value.id
+                            else -> value
+                        }
                     }
                 })
                 println(toString())
