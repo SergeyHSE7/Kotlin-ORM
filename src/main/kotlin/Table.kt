@@ -90,7 +90,7 @@ abstract class Table<E : Entity>(
 
     inner class Reference<R : Entity>(
         property: KMutableProperty1<E, R?>,
-        refTable: Table<out Entity>,
+        refTable: Table<Entity>,
         val onDelete: Action
     ) :
         Column<R?>(property, "integer", refTable) {
@@ -108,7 +108,7 @@ abstract class Table<E : Entity>(
     open inner class Column<T>(
         val property: KMutableProperty1<E, T>,
         val sqlType: String,
-        val refTable: Table<out Entity>? = null
+        val refTable: Table<Entity>? = null
     ) {
         val name: String = property.columnName
         val entityClass = this@Table.entityClass
@@ -183,7 +183,7 @@ abstract class Table<E : Entity>(
             refTable: Table<T>,
             onDelete: Action = Action.SetDefault
         ) =
-            Reference(prop, refTable, onDelete)
+            Reference(prop, refTable as Table<Entity>, onDelete)
 
         fun uniqueColumns(vararg props: KMutableProperty1<E, *>) {
             uniqueColumns.addAll(props.map { it.columnName })

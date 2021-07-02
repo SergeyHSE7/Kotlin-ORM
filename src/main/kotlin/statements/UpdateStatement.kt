@@ -16,20 +16,27 @@ private class UpdateStatement<out E : Entity>(
     private val entity: E,
     private val props: List<KMutableProperty1<E, *>> = listOf()
 ) {
-    private val columnValues: List<Pair<String, String>> = props.ifEmpty { entity.properties }
-        .filter { it.returnValue(entity) !is Entity }
+    private val columnValues: MutableList<Pair<String, String>> = props.ifEmpty { entity.properties }
+        .filter { it.columnName != "id" }
         .map { prop ->
-            prop.columnName to
-                    if (prop.returnValue(entity) is String) "'${prop.returnValue(entity)}'"
-                    else prop.returnValue(entity).toString()
-        }.filter { it.first != "id" }
+            prop.columnName to when (val value = prop.returnValue(entity)) {
+                is String -> "'$value'"
+                is Entity -> value.id
+                else -> value
+            }.toString()
+        }.toMutableList()
 
 
     private fun updateReferences() {
         table.columns.filter { it.refTable != null && (props.isEmpty() || props.contains(it.property)) }
             .forEach {
                 val refEntity = it.property.returnValue(entity) as Entity
-                it.refTable!!.update(refEntity)
+                if (it.refTable?.get(refEntity.id) != null) it.refTable.update(refEntity)
+                else {
+                    it.refTable?.add(refEntity)
+                    val index = columnValues.indexOfFirst { pair -> pair.first == it.name }
+                    columnValues[index] = Pair(it.name, refEntity.id.toString())
+                }
             }
     }
 
@@ -38,10 +45,9 @@ private class UpdateStatement<out E : Entity>(
     fun where(conditionBody: WhereCondition) = this.apply { whereStatement.addCondition(conditionBody) }
 
     fun execute() {
-        database.executeSql(getSql()).also {
-            updateReferences()
-            println(getSql())
-        }
+        updateReferences()
+        database.executeSql(getSql())
+        println(getSql())
     }
 
     fun getSql(): String = "UPDATE ${table.tableName} " +
