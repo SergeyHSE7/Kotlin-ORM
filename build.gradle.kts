@@ -19,6 +19,9 @@ dependencies {
 
     implementation("org.atteo:evo-inflector:1.2.2")
 
+    implementation("org.tinylog:tinylog-api:2.4.0-M1")
+    implementation("org.tinylog:tinylog-impl:2.4.0-M1")
+
     testImplementation("io.kotest:kotest-runner-junit5:4.6.0")
 }
 

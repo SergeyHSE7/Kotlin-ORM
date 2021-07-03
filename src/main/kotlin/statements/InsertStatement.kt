@@ -3,6 +3,7 @@ package statements
 import Entity
 import Table
 import database
+import org.tinylog.Logger
 import utils.getEntity
 import utils.map
 import utils.set
@@ -56,6 +57,6 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
                         }
                     }
                 })
-                println(toString())
+                Logger.tag("INSERT").info { toString() }
             }
 }

@@ -1,3 +1,4 @@
+import org.tinylog.Logger
 import statements.*
 import utils.*
 import java.math.BigDecimal
@@ -91,7 +92,7 @@ abstract class Table<E : Entity>(
     inner class Reference<R : Entity>(
         property: KMutableProperty1<E, R?>,
         refTable: Table<Entity>,
-        val onDelete: Action
+        private val onDelete: Action
     ) :
         Column<R?>(property, "integer", refTable) {
 
@@ -111,7 +112,6 @@ abstract class Table<E : Entity>(
         val refTable: Table<Entity>? = null
     ) {
         val name: String = property.columnName
-        val entityClass = this@Table.entityClass
         private var defaultValue: T? = null
         private var isNotNull = false
         private var isUnique = false
@@ -119,12 +119,11 @@ abstract class Table<E : Entity>(
 
         init {
             columns.add(this)
-            println("$name - ${property.returnType}")
             if (!property.returnType.isMarkedNullable)
                 isNotNull = true
 
-            if (property.returnType.isMarkedNullable == isNotNull)
-                println("Несоответствие типов!")
+            if (property.returnType.isMarkedNullable && isNotNull)
+                Logger.warn { "Несоответствие типов!" }
         }
 
         fun notNull() = this.also { isNotNull = true }

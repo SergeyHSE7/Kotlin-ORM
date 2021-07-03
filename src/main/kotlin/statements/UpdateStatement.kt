@@ -4,6 +4,7 @@ import Entity
 import Table
 import utils.columnName
 import database
+import org.tinylog.Logger
 import utils.returnValue
 import kotlin.reflect.KMutableProperty1
 
@@ -46,8 +47,7 @@ private class UpdateStatement<out E : Entity>(
 
     fun execute() {
         updateReferences()
-        database.executeSql(getSql())
-        println(getSql())
+        database.executeSql(getSql().also { Logger.tag("UPDATE").info { it } })
     }
 
     fun getSql(): String = "UPDATE ${table.tableName} " +

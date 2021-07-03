@@ -1,3 +1,4 @@
+import org.tinylog.Logger
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
@@ -26,7 +27,7 @@ class Database(
         try {
             connection.createStatement().execute(sql)
         } catch (ex: SQLException) {
-            println("SQL-EXCEPTION: ${ex.message}")
+            Logger.error { ex }
         }
     }
 

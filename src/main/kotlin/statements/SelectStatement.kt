@@ -4,6 +4,7 @@ import Entity
 import Table
 import utils.columnName
 import database
+import org.tinylog.Logger
 import utils.*
 import java.sql.ResultSet
 import kotlin.reflect.KMutableProperty1
@@ -56,18 +57,16 @@ class SelectStatement<E : Entity>(
     fun getResultSet(): ResultSet = database.executeQuery(getSql())
         .also { println(getSql()) }
 
-    fun getEntity(): E? = database.executeQuery(getSql())
+    fun getEntity(): E? = database.executeQuery(getSql().also { Logger.tag("SELECT").info { it } })
         .run { if (next()) getEntity(table, lazy) else null }
         .also {
             if (selectAll && it != null) table.cache.add(it, !lazy)
-            println(getSql())
         }
 
-    fun getEntities(): List<E> = database.executeQuery(getSql())
+    fun getEntities(): List<E> = database.executeQuery(getSql().also { Logger.tag("SELECT").info { it } })
         .map { getEntity(table, lazy) }
         .also {
             if (selectAll) table.cache.addAll(it, !lazy)
-            println(getSql())
         }
 
     fun getSql(): String =

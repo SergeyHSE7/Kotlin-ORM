@@ -3,6 +3,7 @@ package statements
 import Entity
 import Table
 import database
+import org.tinylog.Logger
 
 fun <E : Entity> Table<E>.delete(condition: WhereCondition? = null) =
     DeleteStatement(this).where(condition).execute().also { cache.clear() }
@@ -18,7 +19,7 @@ private class DeleteStatement<in E : Entity>(private val table: Table<E>) {
     fun where(conditionBody: WhereCondition?) = this.apply { whereStatement.addCondition(conditionBody) }
 
     fun execute() {
-        database.executeSql(getSql()).also { println(getSql()) }
+        database.executeSql(getSql().also { Logger.tag("DELETE").info { it } })
     }
 
     fun getSql(): String = "DELETE FROM ${table.tableName}" + whereStatement.getSql()

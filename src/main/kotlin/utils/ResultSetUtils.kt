@@ -20,7 +20,7 @@ fun <E : Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>, laz
     val prop = entity.properties.firstOrNull { it.name == column.property.name }
             as? KMutableProperty1<E, T> ?: return
 
-    try {
+    kotlin.runCatching {
         if (column.refTable != null) {
             val index = getValue(column) as? Int ?: return
             val obj = if (lazy || column.property.hasAnnotation<FetchLazy>())
@@ -29,10 +29,6 @@ fun <E : Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>, laz
 
             prop.set(entity, obj as T)
         } else prop.set(entity, getValue(column))
-
-    } catch (ex: PSQLException) {
-        if (ex.message?.contains("не найдено") == false)
-            throw ex
     }
 }
 

@@ -3,7 +3,9 @@ package statements
 import Entity
 import Table
 import database
+import org.tinylog.Logger
 import utils.ifTrue
+
 
 fun <E : Entity> Table<E>.create() = CreateStatement(this).execute()
 
@@ -19,5 +21,5 @@ private class CreateStatement<in E : Entity>(private val table: Table<E>) {
                     .ifTrue(table.uniqueColumns.isNotEmpty()) +
                 "\n)"
 
-    fun execute() = database.executeSql(getSql()).also { println(getSql()) }
+    fun execute() = database.executeSql(getSql().also { Logger.tag("CREATE").info { "\n" + getSql() } })
 }
