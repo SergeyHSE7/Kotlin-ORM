@@ -15,8 +15,6 @@ data class UserBook(
 
 object UserBooksTable : Table<UserBook>(
     UserBook::class, true, {
-    UsersTable
-    BooksTable
     reference(UserBook::borrower, UsersTable, Action.Cascade)
     reference(UserBook::book, BooksTable, Action.Cascade)
     date(UserBook::checkoutDate)

@@ -1,4 +1,5 @@
 import org.tinylog.Logger
+import utils.map
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
@@ -17,6 +18,7 @@ class Database(
     driver: String = "org.postgresql.Driver"
 ) {
     val connection: Connection = DriverManager.getConnection(url, user, password)
+    val reservedKeyWords: List<String> = executeQuery("SELECT word FROM pg_get_keywords() WHERE catcode = 'R'").map { getString("word") }
 
     init {
         if (driver.isNotBlank())

@@ -27,6 +27,10 @@ abstract class Table<E : Entity>(
     fun isEmpty() = size == 0
 
     init {
+
+        if (tableName in database.reservedKeyWords)
+            Logger.error { "\"$tableName\" is a reserved SQL keyword!" }.also { throw Exception() }
+
         with(CreateMethods()) {
             @Suppress("UNCHECKED_CAST")
             serial(entityClass.properties.first { it.name == "id" } as KMutableProperty1<E, Int>).primaryKey()
@@ -118,15 +122,18 @@ abstract class Table<E : Entity>(
         private var isPrimaryKey = false
 
         init {
+            if (name in database.reservedKeyWords)
+                Logger.error { "\"$name\" is a reserved SQL word!" }.also { throw Exception() }
             columns.add(this)
             if (!property.returnType.isMarkedNullable)
                 isNotNull = true
-
-            if (property.returnType.isMarkedNullable && isNotNull)
-                Logger.warn { "Несоответствие типов!" }
         }
 
-        fun notNull() = this.also { isNotNull = true }
+        fun notNull() = this.also {
+            isNotNull = true
+            if (property.returnType.isMarkedNullable)
+                Logger.warn { "Nullable value shouldn't be marked as not null! (column: $tableName.$name)" }
+        }
         fun unique() = this.also { isUnique = true }
         fun primaryKey() = this.also { isPrimaryKey = true }
         fun default(value: T) = this.also { defaultValue = value }
