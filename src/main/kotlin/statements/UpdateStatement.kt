@@ -8,8 +8,8 @@ import org.tinylog.Logger
 import utils.returnValue
 import kotlin.reflect.KMutableProperty1
 
-fun <E : Entity> Table<out E>.update(entity: E, vararg props: KMutableProperty1<E, *>) =
-    UpdateStatement(this, entity, props.toList()).where { "id = ${entity.id}" }.execute()
+fun <E : Entity> Table<out E>.update(entity: E, props: List<KMutableProperty1<E, *>>) =
+    UpdateStatement(this, entity, props).where { "id = ${entity.id}" }.execute()
         .also { cache.remove(entity.id) }
 
 private class UpdateStatement<out E : Entity>(

@@ -15,7 +15,7 @@ class UpdateTests : FreeSpec({
     }
     "Should update references" {
         val user = UsersTable[2]!!
-        UsersTable.update(user) {
+        user.update {
             username = "Josef"
             address = AddressesTable[1]!!.copy(city = "Los Angeles")
         }

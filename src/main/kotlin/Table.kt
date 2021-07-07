@@ -27,7 +27,7 @@ abstract class Table<E : Entity>(
     fun isEmpty() = size == 0
 
     init {
-
+        tables[entityClass] = this
         if (tableName in database.reservedKeyWords)
             Logger.error { "\"$tableName\" is a reserved SQL keyword!" }.also { throw Exception() }
 
@@ -41,9 +41,6 @@ abstract class Table<E : Entity>(
         createTable()
         add(defaultEntities)
     }
-
-    fun defaultEntities(vararg entities: E) = defaultEntities(entities.toList())
-    fun defaultEntities(entities: List<E>) = this.apply { add(entities) }
 
     fun createTable() = create()
     fun dropTable() = drop()
@@ -81,9 +78,9 @@ abstract class Table<E : Entity>(
     fun findIdOf(condition: WhereCondition): Int? = select("id").where(condition).getEntity()?.id
 
     operator fun set(id: Int, entity: E) = update(entity) { this.id = id }
-    inline fun update(entity: E, func: E.() -> Unit) {
+    inline fun update(entity: E, vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {
         func(entity)
-        update(entity)
+        update(entity, props.toList())
     }
 
     fun update(entities: List<E>) = entities.forEach { update(it) }
@@ -194,6 +191,10 @@ abstract class Table<E : Entity>(
         fun uniqueColumns(vararg props: KMutableProperty1<E, *>) {
             uniqueColumns.addAll(props.map { it.columnName })
         }
+    }
+
+    companion object {
+        val tables = HashMap<KClass<*>, Table<*>>()
     }
 
 }

@@ -9,14 +9,15 @@ class InsertTests : FreeSpec({
     "INSERT check" {
         (newEntity in TestTable) shouldBe false
 
-        val id = TestTable.add(newEntity)
+        val id = newEntity.save()
         newEntity.id shouldBe id
 
         (newEntity in TestTable) shouldBe true
     }
     "Shouldn't duplicate objects with unique values" {
-        TestTable.add(newEntity) shouldBe null
+        newEntity.save() shouldBe null
 
-        TestTable -= newEntity
+        // TestTable -= newEntity
+        newEntity.delete()
     }
 })
