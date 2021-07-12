@@ -1,9 +1,7 @@
 package statements
 
-import utils.columnName
+import sql_type_functions.*
 import utils.fullColumnName
-import utils.Case
-import utils.transformCase
 import kotlin.reflect.KMutableProperty1
 
 typealias WhereCondition = WhereStatement.() -> String
@@ -22,50 +20,63 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
     else " WHERE " + conditions.joinToString(" AND ")
 
 
-    infix fun <T : KMutableProperty1<*, *>> T.eq(obj: Any?): String =
-        if (obj == null) isNull() else boolOperator(obj, "=")
+    infix fun <T : Any?> T.eq(obj: Any?): String =
+        if (obj == null) toSql() + " IS NULL" else boolOperator(obj, "=")
 
-    infix fun <T : KMutableProperty1<*, *>> T.neq(obj: Any?): String =
-        if (obj == null) isNotNull() else boolOperator(obj, "!=")
+    infix fun <T : Any?> T.neq(obj: Any?): String =
+        if (obj == null) toSql() + " IS NOT NULL" else boolOperator(obj, "!=")
 
-    infix fun <T : KMutableProperty1<*, *>> T.less(obj: Any?): String = boolOperator(obj, "<")
-    infix fun <T : KMutableProperty1<*, *>> T.greater(obj: Any?): String = boolOperator(obj, ">")
-    infix fun <T : KMutableProperty1<*, *>> T.lessEq(obj: Any?): String = boolOperator(obj, "<=")
-    infix fun <T : KMutableProperty1<*, *>> T.greaterEq(obj: Any?): String = boolOperator(obj, ">=")
+    infix fun <T : Any?> T.less(obj: Any?): String = boolOperator(obj, "<")
+    infix fun <T : Any?> T.greater(obj: Any?): String = boolOperator(obj, ">")
+    infix fun <T : Any?> T.lessEq(obj: Any?): String = boolOperator(obj, "<=")
+    infix fun <T : Any?> T.greaterEq(obj: Any?): String = boolOperator(obj, ">=")
 
 
-    infix fun <T : KMutableProperty1<*, *>> T.like(str: String): String = boolOperator(str, "LIKE")
-    infix fun <T : KMutableProperty1<*, *>> T.notLike(str: String): String = boolOperator(str, "NOT LIKE")
+    infix fun <T : Any?> T.like(str: String): String = boolOperator(str, "LIKE")
+    infix fun <T : Any?> T.notLike(str: String): String = boolOperator(str, "NOT LIKE")
 
-    infix fun <T : KMutableProperty1<*, *>> T.startsWith(str: String): String = like("$str%")
-    infix fun <T : KMutableProperty1<*, *>> T.notStartsWith(str: String): String = notLike("$str%")
+    infix fun <T : Any?> T.startsWith(str: String): String = like("$str%")
+    infix fun <T : Any?> T.notStartsWith(str: String): String = notLike("$str%")
 
-    infix fun <T : KMutableProperty1<*, *>> T.endsWith(str: String): String = like("%$str")
-    infix fun <T : KMutableProperty1<*, *>> T.notEndsWith(str: String): String = notLike("%$str")
+    infix fun <T : Any?> T.endsWith(str: String): String = like("%$str")
+    infix fun <T : Any?> T.notEndsWith(str: String): String = notLike("%$str")
 
-    infix fun <T : KMutableProperty1<*, *>> T.contains(str: String): String = like("%$str%")
-    infix fun <T : KMutableProperty1<*, *>> T.notContains(str: String): String = notLike("%$str%")
+    infix fun <T : Any?> T.contains(str: String): String = like("%$str%")
+    infix fun <T : Any?> T.notContains(str: String): String = notLike("%$str%")
 
-    infix fun <T : KMutableProperty1<*, *>> T.match(regex: Regex): String = boolOperator(regex.pattern, "~")
-    infix fun <T : KMutableProperty1<*, *>> T.notMatch(regex: Regex): String = boolOperator(regex.pattern, "!~")
+    infix fun <T : Any?> T.match(regex: Regex): String = boolOperator(regex.pattern, "~")
+    infix fun <T : Any?> T.notMatch(regex: Regex): String = boolOperator(regex.pattern, "!~")
 
-    infix fun <T : KMutableProperty1<*, *>> T.inList(list: List<Any?>): String = boolOperator(list, "IN")
-    infix fun <T : KMutableProperty1<*, *>> T.notInList(list: List<Any?>): String = boolOperator(list, "NOT IN")
+    infix fun <T : Any?> T.inList(list: List<T>): String = boolOperator(list, "IN")
+    infix fun <T : Any?> T.notInList(list: List<T>): String = boolOperator(list, "NOT IN")
 
-    fun <T : KMutableProperty1<*, *>> T.isNull(): String = name.transformCase(Case.Camel, Case.Snake) + " IS NULL"
-    fun <T : KMutableProperty1<*, *>> T.isNotNull(): String = "$columnName IS NOT NULL"
+    fun <P : Any, T : KMutableProperty1<*, P?>> T.isNull(): String = toSql() + " IS NULL"
+    fun <P : Any, T : KMutableProperty1<*, P?>> T.isNotNull(): String = toSql() + " IS NOT NULL"
 
     infix fun String.and(str: String): String = "$this AND $str"
     infix fun String.or(str: String): String = "$this OR $str"
 
 
-    private fun <T : KMutableProperty1<*, *>> T.boolOperator(obj: Any?, strOperator: String): String =
-        "$fullColumnName $strOperator " +
-                when (obj) {
-                    is String -> "'$obj'"
-                    is List<Any?> -> obj.joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
-                    is KMutableProperty1<*, *> -> obj.fullColumnName
-                        .also { columns.add(it) }
-                    else -> obj.toString()
-                }.also { columns.add(columnName) }
+    private fun <T : Any?> T.boolOperator(obj: Any?, strOperator: String): String =
+        (if (this is KMutableProperty1<*, *>) fullColumnName else this.toString()) +
+                " $strOperator " + obj.toSql()
+
+    private fun <T : Any?> T.toSql() = when (this) {
+        is String -> "'$this'"
+        is List<Any?> -> joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
+        is KMutableProperty1<*, *> -> fullColumnName
+            .also { columns.add(it) }
+        else -> this.toString()
+    }
+
+
+    val <S : String?, T : KMutableProperty1<*, S>> T.sqlString
+        get() = SqlString(fullColumnName).also { columns.add(fullColumnName) }
+
+    val <N : Number?, T : KMutableProperty1<*, N>> T.sqlInt
+        get() = SqlNumber(fullColumnName).also { columns.add(fullColumnName) }
+
+    val <N : Number?, T : KMutableProperty1<*, List<N>>> T.sqlList
+        get() = SqlNumber(fullColumnName).also { columns.add(fullColumnName) }
+
 }

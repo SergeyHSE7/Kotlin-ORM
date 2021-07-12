@@ -21,8 +21,7 @@ abstract class Table<E : Entity>(
     val uniqueColumns = mutableSetOf<String>()
 
     val size: Int
-        get() = database.connection.createStatement().executeQuery("SELECT COUNT(*) FROM $tableName")
-            .apply { next() }.getInt(1)
+        get() = select(Entity::id) { it.count() }.toInt()
 
     fun isEmpty() = size == 0
 
@@ -75,7 +74,7 @@ abstract class Table<E : Entity>(
     fun findById(id: Int, loadReferences: Boolean = true): E? =
         cache[id, loadReferences] ?: find(loadReferences) { Entity::id eq id }
 
-    fun findIdOf(condition: WhereCondition): Int? = select("id").where(condition).getEntity()?.id
+    fun findIdOf(condition: WhereCondition): Int? = select(Entity::id).where(condition).getEntity()?.id
 
     operator fun set(id: Int, entity: E) = update(entity) { this.id = id }
     inline fun update(entity: E, vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {

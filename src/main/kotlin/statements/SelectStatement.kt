@@ -5,6 +5,8 @@ import Table
 import utils.columnName
 import database
 import org.tinylog.Logger
+import sql_type_functions.SqlNumber
+import sql_type_functions.SqlList
 import utils.*
 import java.sql.ResultSet
 import kotlin.reflect.KMutableProperty1
@@ -12,11 +14,13 @@ import kotlin.reflect.KMutableProperty1
 data class OrderColumn(val column: String, val isDescending: Boolean = false)
 
 fun <E : Entity> Table<E>.selectAll(): SelectStatement<E> = SelectStatement(this, selectAll = true)
-fun <E : Entity> Table<E>.select(vararg propsNames: String): SelectStatement<E> =
-    SelectStatement(this, propsNames.toList())
-
 fun <E : Entity> Table<E>.select(vararg props: KMutableProperty1<*, *>): SelectStatement<E> =
     SelectStatement(this, props.map { prop -> prop.columnName })
+
+fun <E : Entity> Table<E>.select(prop: KMutableProperty1<*, *>, function: (SqlList) -> SqlNumber): Double =
+    SelectStatement(this, listOf(function(SqlList(prop.columnName)).toString()))
+        .getResultSet().apply { next() }.getDouble(1)
+
 
 class SelectStatement<E : Entity>(
     private val table: Table<E>,
@@ -54,16 +58,15 @@ class SelectStatement<E : Entity>(
     fun limit(limit: Int) = this.apply { this.limit = limit }
     fun offset(offset: Int) = this.apply { this.offset = offset }
 
-    fun getResultSet(): ResultSet = database.executeQuery(getSql())
-        .also { println(getSql()) }
+    fun getResultSet(): ResultSet = database.executeQuery(getSql().also { Logger.tag("SELECT").info { it } })
 
-    fun getEntity(): E? = database.executeQuery(getSql().also { Logger.tag("SELECT").info { it } })
+    fun getEntity(): E? = getResultSet()
         .run { if (next()) getEntity(table, lazy) else null }
         .also {
             if (selectAll && it != null) table.cache.add(it, !lazy)
         }
 
-    fun getEntities(): List<E> = database.executeQuery(getSql().also { Logger.tag("SELECT").info { it } })
+    fun getEntities(): List<E> = getResultSet()
         .map { getEntity(table, lazy) }
         .also {
             if (selectAll) table.cache.addAll(it, !lazy)

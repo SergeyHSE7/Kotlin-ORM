@@ -39,7 +39,7 @@ fun List<String>.joinWithCase(case: Case): String = when (case) {
 }
 
 fun String.capitalize(): String =
-    replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+    replaceFirstChar { it.uppercaseChar() }
 
 enum class Case {
     Normal, Pascal, Snake, Camel, Kebab
