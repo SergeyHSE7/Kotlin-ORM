@@ -1,6 +1,5 @@
 import entities.Test
 import entities.TestTable
-import entities.defaultTestEntities
 import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -11,7 +10,7 @@ class TableOperationsTests : FreeSpec({
     "Create table" {
         TestTable.tableName shouldBe "tests"
         TestTable.columns.size shouldBe Test().properties.size
-        TestTable.all().size shouldBe defaultTestEntities.size
+        TestTable.all().size shouldBe TestTable.defaultEntities.size
     }
     "Clear table" {
         TestTable.clearTable()

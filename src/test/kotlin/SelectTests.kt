@@ -1,18 +1,20 @@
-import entities.User
-import entities.UserBooksTable
-import entities.UsersTable
-import entities.defaultUsers
+import entities.*
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldBeSortedWith
 import io.kotest.matchers.collections.shouldNotBeSortedWith
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import statements.selectAll
 
 class SelectTests : FreeSpec({
+    val defaultUsers = UsersTable.defaultEntities
+
     "SELECT COUNT(*)" {
         UserBooksTable.all().forEach(::println)
         UsersTable.all().forEach(::println)
         UsersTable.size shouldBe defaultUsers.size
+        UsersTable[1]!!.books.size shouldBeGreaterThan 0
+        AddressesTable[1]!!.users.size shouldBeGreaterThan 0
     }
     "Not-existing entity equals null" {
         UsersTable[100] shouldBe null

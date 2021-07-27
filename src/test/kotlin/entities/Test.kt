@@ -1,7 +1,7 @@
 package entities
 
 import Entity
-import Table
+import table
 
 data class Test(
     override var id: Int = 0,
@@ -9,13 +9,15 @@ data class Test(
     var int: Int = 0,
 ) : Entity()
 
-val defaultTestEntities = listOf(
-    Test(string = "str1", int = 1),
-    Test(string = "str2", int = 2),
-)
 
-object TestTable : Table<Test>(Test::class, true, {
+val TestTable = table<Test> {
     varchar(Test::string).unique()
     int(Test::int)
 
-}, defaultTestEntities)
+    defaultEntities {
+        listOf(
+            Test(string = "str1", int = 1),
+            Test(string = "str2", int = 2),
+        )
+    }
+}

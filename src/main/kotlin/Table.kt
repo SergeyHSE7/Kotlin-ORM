@@ -7,18 +7,26 @@ import java.sql.Time
 import java.sql.Timestamp
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.jvm.javaType
 
+inline fun <reified E : Entity> table(noinline columnsBody: Table<E>.CreateMethods.() -> Unit): Table<E> =
+    Table(E::class, columnsBody)
 
-abstract class Table<E : Entity>(
+enum class Action {
+    Cascade, SetNull, SetDefault
+}
+
+open class Table<E : Entity>(
     val entityClass: KClass<E>,
-    refresh: Boolean = false,
-    columnsBody: Table<E>.CreateMethods.() -> Unit = {},
-    defaultEntities: List<E> = listOf()
+    columnsBody: Table<E>.CreateMethods.() -> Unit,
 ) {
-    val cache = CacheMap<E>(10)
+    val cache = CacheMap<E>(Config.maxCacheSize)
     var tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
     val columns = mutableListOf<Column<*>>()
     val uniqueColumns = mutableSetOf<String>()
+    val onAfterInit: MutableSet<() -> Unit> = mutableSetOf()
+    lateinit var defaultEntities: List<E>
+        private set
 
     val size: Int
         get() = select(Entity::id) { it.count() }.toInt()
@@ -28,7 +36,7 @@ abstract class Table<E : Entity>(
     init {
         tables[entityClass] = this
         if (tableName in database.reservedKeyWords)
-            Logger.error { "\"$tableName\" is a reserved SQL keyword!" }.also { throw Exception() }
+            throw LoggerException("\"$tableName\" is a reserved SQL keyword!")
 
         with(CreateMethods()) {
             @Suppress("UNCHECKED_CAST")
@@ -36,9 +44,8 @@ abstract class Table<E : Entity>(
             columnsBody()
         }
 
-        if (refresh) dropTable()
+        if (Config.refreshTables) dropTable()
         createTable()
-        add(defaultEntities)
     }
 
     fun createTable() = create()
@@ -52,7 +59,7 @@ abstract class Table<E : Entity>(
 
     fun add(entity: E): Int? = insert(entity).getId()?.apply { entity.id = this }
     fun add(vararg entities: E): List<Int> = add(entities.toList())
-    fun add(entities: List<E>): List<Int> = insert(entities).getIds()
+    fun add(entities: List<E>): List<Int> = if (entities.isEmpty()) listOf() else insert(entities).getIds()
         .apply { forEachIndexed { index, id -> entities[index].id = id } }
 
 
@@ -89,22 +96,18 @@ abstract class Table<E : Entity>(
 
     fun <T> getValuesOfColumn(prop: KMutableProperty1<E, T>): List<T> = select(prop).getEntities().map(prop)
 
-    inner class Reference<R : Entity>(
-        property: KMutableProperty1<E, R?>,
+    inner class Reference<P : Entity?>(
+        property: KMutableProperty1<E, P>,
         refTable: Table<Entity>,
         private val onDelete: Action
     ) :
-        Column<R?>(property, "integer", refTable) {
+        Column<P>(property, "integer", refTable) {
 
-        override fun attributesToSql(): String =
-            super.attributesToSql() + "REFERENCES ${refTable!!.tableName} (id) ON DELETE " +
-                    onDelete.name.transformCase(Case.Pascal, Case.Normal).uppercase()
-
+        init {
+            onAfterInit.add { alter().addForeignKey(property, refTable, onDelete) }
+        }
     }
 
-    enum class Action {
-        Cascade, SetNull, SetDefault
-    }
 
     open inner class Column<T>(
         val property: KMutableProperty1<E, T>,
@@ -119,7 +122,7 @@ abstract class Table<E : Entity>(
 
         init {
             if (name in database.reservedKeyWords)
-                Logger.error { "\"$name\" is a reserved SQL word!" }.also { throw Exception() }
+                throw LoggerException("\"$name\" is a reserved SQL keyword!")
             columns.add(this)
             if (!property.returnType.isMarkedNullable)
                 isNotNull = true
@@ -146,6 +149,13 @@ abstract class Table<E : Entity>(
     }
 
     inner class CreateMethods {
+        fun defaultEntities(entities: () -> List<E>) {
+            onAfterInit.add {
+                defaultEntities = entities()
+                add(defaultEntities)
+            }
+        }
+
         fun <T : Int?> serial(prop: KMutableProperty1<E, T>) = Column(prop, "serial")
 
         fun <T : BigDecimal?> decimal(prop: KMutableProperty1<E, T>, precision: Int, scale: Int) =
@@ -180,12 +190,10 @@ abstract class Table<E : Entity>(
             Column(prop, "timestamp" + " with time zone".ifTrue(withTimeZone))
 
 
-        fun <T : Entity> reference(
-            prop: KMutableProperty1<E, T?>,
-            refTable: Table<T>,
-            onDelete: Action = Action.SetDefault
-        ) =
-            Reference(prop, refTable as Table<Entity>, onDelete)
+        fun <T : Entity> reference(prop: KMutableProperty1<E, T?>, onDelete: Action = Action.SetDefault) =
+            @Suppress("UNCHECKED_CAST")
+            Reference(prop, get((prop.returnType.javaType as Class<T>).kotlin)!!, onDelete)
+
 
         fun uniqueColumns(vararg props: KMutableProperty1<E, *>) {
             uniqueColumns.addAll(props.map { it.columnName })
@@ -194,6 +202,10 @@ abstract class Table<E : Entity>(
 
     companion object {
         val tables = HashMap<KClass<*>, Table<*>>()
+        @Suppress("UNCHECKED_CAST")
+        inline operator fun <reified T: Entity> invoke() = tables[T::class] as Table<T>?
+        @Suppress("UNCHECKED_CAST")
+        operator fun <T: Entity> get(kClass: KClass<T>) = tables[kClass] as Table<Entity>?
     }
 
 }

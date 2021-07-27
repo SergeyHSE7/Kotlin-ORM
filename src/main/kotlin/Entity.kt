@@ -9,8 +9,7 @@ abstract class Entity {
     abstract var id: Int
     val properties by lazy { this::class.properties }
     val table: Table<Entity>?
-        get() = Table.tables[this::class] as? Table<Entity>
-            ?: Logger.error { "Table for entity ${this::class} is not initialized" }.let { null }
+        get() = Table[this::class] ?: Logger.error { "Table for entity ${this::class} is not initialized" }.let { null }
 
     fun compareValuesWith(other: Entity): Boolean =
         properties.all { prop ->
@@ -19,17 +18,18 @@ abstract class Entity {
             }
         }
 
-    fun <E : Entity> oneToMany(refTable: Table<E>?, keyProp: KMutableProperty1<E, *>) =
+    inline fun <reified E : Entity> oneToMany(keyProp: KMutableProperty1<E, *>) =
         ReadOnlyProperty<Any?, List<E>> { thisRef, _ ->
+            val refTable = Table<E>()
             refTable?.findAll { keyProp eq (thisRef as Entity).id } ?: listOf()
         }
 
-    fun <K : Entity, V : Entity?> manyToMany(
-        refKeyTable: Table<K>?,
+    inline fun <reified K : Entity, V : Entity?> manyToMany(
         keyProp: KMutableProperty1<K, *>,
         valueProp: KMutableProperty1<K, V>
     ) =
         ReadOnlyProperty<Any?, List<V>> { thisRef, _ ->
+            val refKeyTable = Table<K>()
             refKeyTable?.findAll { keyProp eq (thisRef as Entity).id }?.map { valueProp.get(it) } ?: listOf()
         }
 }
@@ -37,9 +37,9 @@ abstract class Entity {
 
 fun <E : Entity> E.save(): Int? = table?.add(this)
 
-inline fun <E : Entity> E.update(vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {
+inline fun <reified E : Entity> E.update(vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {
     func(this)
-    (table as? Table<E>)?.update(this, props.toList())
+    Table<E>()?.update(this, props.toList())
 }
 
 fun <E : Entity> E.delete() = table?.delete(this)
