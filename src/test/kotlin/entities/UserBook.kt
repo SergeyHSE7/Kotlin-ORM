@@ -1,6 +1,7 @@
 package entities
 
 import Entity
+import autoTable
 import table
 import java.sql.Date
 
@@ -13,11 +14,9 @@ data class UserBook(
 ) : Entity()
 
 
-val UserBooksTable = table<UserBook> {
+val UserBooksTable = autoTable<UserBook> {
     reference(UserBook::borrower, Action.Cascade)
     reference(UserBook::book, Action.Cascade)
-    date(UserBook::checkoutDate)
-    date(UserBook::returnDate)
 
     defaultEntities {
         listOf(

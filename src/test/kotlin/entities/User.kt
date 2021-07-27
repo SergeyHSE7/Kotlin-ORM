@@ -1,6 +1,7 @@
 package entities
 
 import Entity
+import autoTable
 import table
 
 data class User(
@@ -13,7 +14,7 @@ data class User(
     val books: List<Book?> by manyToMany(UserBook::borrower, UserBook::book)
 }
 
-/*val UsersTable = autoTable<User> {
+val UsersTable = autoTable<User> {
     varchar(User::username, 25)
     reference(User::address, Action.SetNull)
 
@@ -27,12 +28,13 @@ data class User(
             User(username = "Simon", address = Address(4), enabled = false, age = 34),
         )
     }
-}*/
+}
 
-val UsersTable = table<User> {
+/*val UsersTable = table<User> {
     varchar(User::username, 25)
     bool(User::enabled)
     int(User::age)
+    reference(User::address, Action.SetNull)
 
     defaultEntities { listOf(
         User(username = "Kevin", address = Address(1), enabled = true, age = 18),
@@ -42,8 +44,5 @@ val UsersTable = table<User> {
         User(username = "Alex", address = Address(5), enabled = false, age = 42),
         User(username = "Simon", address = Address(4), enabled = false, age = 34),
     )}
-
-    reference(User::address, Action.SetNull)
-
-}
+}*/
 

@@ -7,7 +7,35 @@ import java.sql.Time
 import java.sql.Timestamp
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.full.createType
+import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.full.isSupertypeOf
 import kotlin.reflect.jvm.javaType
+
+
+@Suppress("UNCHECKED_CAST")
+inline fun <reified E : Entity> autoTable(noinline columnsBody: Table<E>.CreateMethods.() -> Unit): Table<E> =
+    Table(E::class) {
+        columnsBody()
+        E::class.properties.map { it as KMutableProperty1<E, Any?> }.forEach { prop ->
+            if (prop.name == "id") return@forEach
+            when {
+                prop.returnType.isSupertypeOf(UByte::class.createType()) -> tinyint(prop as KMutableProperty1<E, UByte?>)
+                prop.returnType.isSupertypeOf(Short::class.createType()) -> smallint(prop as KMutableProperty1<E, Short?>)
+                prop.returnType.isSupertypeOf(Int::class.createType()) -> int(prop as KMutableProperty1<E, Int?>)
+                prop.returnType.isSupertypeOf(Long::class.createType()) -> bigint(prop as KMutableProperty1<E, Long?>)
+                prop.returnType.isSupertypeOf(Time::class.createType()) -> time(prop as KMutableProperty1<E, Time?>)
+                prop.returnType.isSupertypeOf(Timestamp::class.createType()) -> timestamp(prop as KMutableProperty1<E, Timestamp?>)
+                prop.returnType.isSupertypeOf(Date::class.createType()) -> date(prop as KMutableProperty1<E, Date?>)
+                prop.returnType.isSupertypeOf(BigDecimal::class.createType()) -> decimal(prop as KMutableProperty1<E, BigDecimal?>, 10, 2)
+                prop.returnType.isSupertypeOf(Float::class.createType()) -> real(prop as KMutableProperty1<E, Float?>)
+                prop.returnType.isSupertypeOf(Double::class.createType()) -> double(prop as KMutableProperty1<E, Double?>)
+                prop.returnType.isSupertypeOf(String::class.createType()) -> text(prop as KMutableProperty1<E, String?>)
+                prop.returnType.isSupertypeOf(Boolean::class.createType()) -> bool(prop as KMutableProperty1<E, Boolean?>)
+                else -> reference(prop as KMutableProperty1<E, Entity?>)
+            }
+        }
+    }
 
 inline fun <reified E : Entity> table(noinline columnsBody: Table<E>.CreateMethods.() -> Unit): Table<E> =
     Table(E::class, columnsBody)
@@ -23,6 +51,7 @@ open class Table<E : Entity>(
     val cache = CacheMap<E>(Config.maxCacheSize)
     var tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
     val columns = mutableListOf<Column<*>>()
+    val references = mutableListOf<Reference<*>>()
     val uniqueColumns = mutableSetOf<String>()
     internal val referencesAddMethods: MutableSet<() -> Unit> = mutableSetOf()
     private var defaultEntitiesMethod: () -> List<E> = { listOf() }
@@ -104,15 +133,19 @@ open class Table<E : Entity>(
         Column<P>(property, "integer") {
 
         init {
-            referencesAddMethods.add { alter().addForeignKey(property, refTable!!, onDelete) }
+            if (!references.any { it.property == property }) {
+                referencesAddMethods.add { alter().addForeignKey(property, refTable!!, onDelete) }
+                references.add(this)
+            }
         }
     }
 
 
     open inner class Column<T>(
         val property: KMutableProperty1<E, T>,
-        val sqlType: String,
+        val sqlType: String
     ) {
+        @Suppress("UNCHECKED_CAST")
         val refTable by lazy { get((property.returnType.javaType as Class<Entity>).kotlin) }
         val name: String = property.columnName
         private var defaultValue: T? = null
@@ -121,11 +154,13 @@ open class Table<E : Entity>(
         private var isPrimaryKey = false
 
         init {
-            if (name in database.reservedKeyWords)
-                throw LoggerException("\"$name\" is a reserved SQL keyword!")
-            columns.add(this)
-            if (!property.returnType.isMarkedNullable)
-                isNotNull = true
+            if (!columns.any { it.property == property }) {
+                if (name in database.reservedKeyWords)
+                    throw LoggerException("\"$name\" is a reserved SQL keyword!")
+                columns.add(this)
+                if (!property.returnType.isMarkedNullable)
+                    isNotNull = true
+            }
         }
 
         fun notNull() = this.also {
