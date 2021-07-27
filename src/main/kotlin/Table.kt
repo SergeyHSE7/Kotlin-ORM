@@ -18,15 +18,16 @@ enum class Action {
 
 open class Table<E : Entity>(
     val entityClass: KClass<E>,
-    columnsBody: Table<E>.CreateMethods.() -> Unit,
+    columnsBody: Table<E>.CreateMethods.() -> Unit
 ) {
     val cache = CacheMap<E>(Config.maxCacheSize)
     var tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
     val columns = mutableListOf<Column<*>>()
     val uniqueColumns = mutableSetOf<String>()
-    val onAfterInit: MutableSet<() -> Unit> = mutableSetOf()
-    lateinit var defaultEntities: List<E>
-        private set
+    internal val referencesAddMethods: MutableSet<() -> Unit> = mutableSetOf()
+    private var defaultEntitiesMethod: () -> List<E> = { listOf() }
+
+    val defaultEntities by lazy { defaultEntitiesMethod() }
 
     val size: Int
         get() = select(Entity::id) { it.count() }.toInt()
@@ -98,13 +99,12 @@ open class Table<E : Entity>(
 
     inner class Reference<P : Entity?>(
         property: KMutableProperty1<E, P>,
-        refTable: Table<Entity>,
         private val onDelete: Action
     ) :
-        Column<P>(property, "integer", refTable) {
+        Column<P>(property, "integer") {
 
         init {
-            onAfterInit.add { alter().addForeignKey(property, refTable, onDelete) }
+            referencesAddMethods.add { alter().addForeignKey(property, refTable!!, onDelete) }
         }
     }
 
@@ -112,8 +112,8 @@ open class Table<E : Entity>(
     open inner class Column<T>(
         val property: KMutableProperty1<E, T>,
         val sqlType: String,
-        val refTable: Table<Entity>? = null
     ) {
+        val refTable by lazy { get((property.returnType.javaType as Class<Entity>).kotlin) }
         val name: String = property.columnName
         private var defaultValue: T? = null
         private var isNotNull = false
@@ -150,10 +150,7 @@ open class Table<E : Entity>(
 
     inner class CreateMethods {
         fun defaultEntities(entities: () -> List<E>) {
-            onAfterInit.add {
-                defaultEntities = entities()
-                add(defaultEntities)
-            }
+            defaultEntitiesMethod = entities
         }
 
         fun <T : Int?> serial(prop: KMutableProperty1<E, T>) = Column(prop, "serial")
@@ -192,7 +189,7 @@ open class Table<E : Entity>(
 
         fun <T : Entity> reference(prop: KMutableProperty1<E, T?>, onDelete: Action = Action.SetDefault) =
             @Suppress("UNCHECKED_CAST")
-            Reference(prop, get((prop.returnType.javaType as Class<T>).kotlin)!!, onDelete)
+            Reference(prop, onDelete)
 
 
         fun uniqueColumns(vararg props: KMutableProperty1<E, *>) {

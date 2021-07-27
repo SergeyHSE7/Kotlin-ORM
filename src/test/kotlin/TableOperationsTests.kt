@@ -10,11 +10,11 @@ class TableOperationsTests : FreeSpec({
     "Create table" {
         TestTable.tableName shouldBe "tests"
         TestTable.columns.size shouldBe Test().properties.size
-        TestTable.all().size shouldBe TestTable.defaultEntities.size
+        TestTable.size shouldBe TestTable.defaultEntities.size
     }
     "Clear table" {
         TestTable.clearTable()
-        TestTable.all().size shouldBe 0
+        TestTable.size shouldBe 0
     }
     "Drop table" {
         TestTable.dropTable()

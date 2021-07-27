@@ -36,6 +36,7 @@ abstract class Entity {
 
 
 fun <E : Entity> E.save(): Int? = table?.add(this)
+fun <E : Entity> List<E>.save(): List<Int> = first().table?.add(this) ?: listOf()
 
 inline fun <reified E : Entity> E.update(vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {
     func(this)

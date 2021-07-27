@@ -1,3 +1,4 @@
+import java.util.*
 
 val database: Database
     get() = Config.database ?: throw LoggerException("First you need to set database property in config method!")
@@ -20,6 +21,7 @@ object Config {
     internal var tables: List<Table<*>> = listOf()
         set(value) {
             field = value
-            value.forEach { it.onAfterInit.forEach { it() } }
+            field.forEach { it.defaultEntities.save() }
+            field.forEach { it.referencesAddMethods.forEach { it() } }
         }
 }

@@ -32,7 +32,7 @@ private class UpdateStatement<out E : Entity>(
         table.columns.filter { it.refTable != null && (props.isEmpty() || props.contains(it.property)) }
             .forEach {
                 val refEntity = it.property.returnValue(entity) as Entity
-                if (it.refTable?.get(refEntity.id) != null) it.refTable.update(refEntity)
+                if (it.refTable?.get(refEntity.id) != null) it.refTable!!.update(refEntity)
                 else {
                     it.refTable?.add(refEntity)
                     val index = columnValues.indexOfFirst { pair -> pair.first == it.name }

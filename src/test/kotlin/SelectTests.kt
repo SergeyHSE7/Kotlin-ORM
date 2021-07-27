@@ -10,11 +10,7 @@ class SelectTests : FreeSpec({
     val defaultUsers = UsersTable.defaultEntities
 
     "SELECT COUNT(*)" {
-        UserBooksTable.all().forEach(::println)
-        UsersTable.all().forEach(::println)
         UsersTable.size shouldBe defaultUsers.size
-        UsersTable[1]!!.books.size shouldBeGreaterThan 0
-        AddressesTable[1]!!.users.size shouldBeGreaterThan 0
     }
     "Not-existing entity equals null" {
         UsersTable[100] shouldBe null
@@ -37,7 +33,7 @@ class SelectTests : FreeSpec({
         UsersTable.selectAll().limit(3).getEntities().size shouldBe 3
     }
     "ORDER check" {
-        val comparator = { user1: User, user2: User -> user1.age - user2.age }
+        val comparator = { user1: User, user2: User -> user1.age!! - user2.age!! }
 
         UsersTable.selectAll().orderBy(User::age).getEntities() shouldBeSortedWith comparator
         UsersTable.selectAll().orderByDescending(User::age).getEntities() shouldNotBeSortedWith  comparator

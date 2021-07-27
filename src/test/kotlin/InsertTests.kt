@@ -10,7 +10,7 @@ class InsertTests : FreeSpec({
             password = "123456"
         )
         refreshTables = true
-        tables = listOf(AddressesTable, UsersTable, BooksTable, UserBooksTable, TestTable)
+        tables = listOf(UserBooksTable, UsersTable, AddressesTable, BooksTable, TestTable)
     }
     val newEntity = Test(string = "unknown", int = 5)
 

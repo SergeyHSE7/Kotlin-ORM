@@ -24,8 +24,8 @@ fun <E : Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>, laz
         if (column.refTable != null) {
             val index = getValue(column) as? Int ?: return
             val obj = if (lazy || column.property.hasAnnotation<FetchLazy>())
-                column.refTable.entityClass.createInstance().apply { id = index }
-            else column.refTable.findById(index, false)
+                column.refTable!!.entityClass.createInstance().apply { id = index }
+            else column.refTable!!.findById(index, false)
 
             prop.set(entity, obj as T)
         } else prop.set(entity, getValue(column))

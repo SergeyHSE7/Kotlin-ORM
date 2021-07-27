@@ -21,7 +21,7 @@ class AlterStatement<E : Entity>(private val table: Table<E>) {
         onDelete: Action
     ) {
         database.executeSql(
-            ("ALTER TABLE IF EXISTS ${table.tableName}\n ADD " +
+            ("ALTER TABLE IF EXISTS ${table.tableName} ADD " +
                     "FOREIGN KEY (${property.columnName}) REFERENCES ${refTable.tableName}(id) " +
                     "ON DELETE ${onDelete.name.transformCase(Case.Pascal, Case.Normal).uppercase()}")
                 .apply { Logger.tag("ALTER").info { this } }
