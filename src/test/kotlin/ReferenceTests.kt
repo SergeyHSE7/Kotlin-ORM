@@ -1,7 +1,6 @@
 import entities.AddressesTable
 import entities.UsersTable
 import io.kotest.core.spec.style.FreeSpec
-import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 
 class ReferenceTests : FreeSpec({

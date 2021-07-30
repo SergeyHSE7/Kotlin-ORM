@@ -20,8 +20,7 @@ abstract class Entity {
 
     inline fun <reified E : Entity> oneToMany(keyProp: KMutableProperty1<E, *>) =
         ReadOnlyProperty<Any?, List<E>> { thisRef, _ ->
-            val refTable = Table<E>()
-            refTable?.findAll { keyProp eq (thisRef as Entity).id } ?: listOf()
+            Table<E>().findAll { keyProp eq (thisRef as Entity).id }
         }
 
     inline fun <reified K : Entity, V : Entity?> manyToMany(
@@ -29,21 +28,20 @@ abstract class Entity {
         valueProp: KMutableProperty1<K, V>
     ) =
         ReadOnlyProperty<Any?, List<V>> { thisRef, _ ->
-            val refKeyTable = Table<K>()
-            refKeyTable?.findAll { keyProp eq (thisRef as Entity).id }?.map { valueProp.get(it) } ?: listOf()
+            Table<K>().findAll { keyProp eq (thisRef as Entity).id }.map { valueProp.get(it) }
         }
 }
 
 
-fun <E : Entity> E.save(): Int? = table?.add(this)
-fun <E : Entity> List<E>.save(): List<Int> = first().table?.add(this) ?: listOf()
+fun <E : Entity> E.save(): E? = table?.add(this) as E?
+fun <E : Entity> List<E>.save(): List<E> = firstOrNull()?.table?.let { it.add(this) as List<E> } ?: listOf()
 
 inline fun <reified E : Entity> E.update(vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {
     func(this)
-    Table<E>()?.update(this, props.toList())
+    Table<E>().update(this, props.toList())
 }
 
-fun <E : Entity> E.delete() = table?.delete(this)
+fun <E : Entity> E.delete(): Unit = table?.delete(this) ?: Unit
 
 
 val KClass<out Entity>.properties

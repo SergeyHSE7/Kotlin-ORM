@@ -1,27 +1,22 @@
-import java.util.*
+import Config.tables
 
 val database: Database
     get() = Config.database ?: throw LoggerException("First you need to set database property in config method!")
 
 
-fun config(func: Config.() -> Unit) {
-    func(Config)
+fun config(func: Config.() -> Unit) = Config.apply(func).also {
+    val tables = tables()
+    tables.forEach { it.defaultEntities.save() }
+    tables.forEach { it.referencesAddMethods.forEach { it() } }
 }
 
 object Config {
-    var database: Database? = null
-        internal set
+    internal var database: Database? = null
 
-    var maxCacheSize: Int = 10
-        internal set
+    internal var maxCacheSize: Int = 10
 
-    var refreshTables: Boolean = false
-        internal set
+    internal var refreshTables: Boolean = false
 
-    internal var tables: List<Table<*>> = listOf()
-        set(value) {
-            field = value
-            field.forEach { it.defaultEntities.save() }
-            field.forEach { it.referencesAddMethods.forEach { it() } }
-        }
+    internal var tables: () -> List<Table<*>> = { listOf() }
+
 }

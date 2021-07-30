@@ -4,21 +4,21 @@ import io.kotest.matchers.shouldBe
 
 class InsertTests : FreeSpec({
     config {
+        tables = { listOf(UserBooksTable, UsersTable, AddressesTable, BooksTable, TestTable) }
+        refreshTables = true
         database = Database(
             url = "jdbc:postgresql://localhost:5432/FinAssistant",
             user = "postgres",
             password = "123456"
         )
-        refreshTables = true
-        tables = listOf(UserBooksTable, UsersTable, AddressesTable, BooksTable, TestTable)
+
     }
     val newEntity = Test(string = "unknown", int = 5)
 
     "INSERT check" {
         (newEntity in TestTable) shouldBe false
 
-        val id = newEntity.save()
-        newEntity.id shouldBe id
+        newEntity.save()
 
         (newEntity in TestTable) shouldBe true
     }

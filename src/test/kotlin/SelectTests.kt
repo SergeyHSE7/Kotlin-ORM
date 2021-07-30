@@ -2,7 +2,6 @@ import entities.*
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldBeSortedWith
 import io.kotest.matchers.collections.shouldNotBeSortedWith
-import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import statements.selectAll
 
@@ -36,7 +35,7 @@ class SelectTests : FreeSpec({
         val comparator = { user1: User, user2: User -> user1.age!! - user2.age!! }
 
         UsersTable.selectAll().orderBy(User::age).getEntities() shouldBeSortedWith comparator
-        UsersTable.selectAll().orderByDescending(User::age).getEntities() shouldNotBeSortedWith  comparator
+        UsersTable.selectAll().orderByDescending(User::age).getEntities() shouldNotBeSortedWith comparator
     }
     "OFFSET check" {
         UsersTable.selectAll().offset(3).getEntity()?.id shouldBe 4

@@ -8,7 +8,6 @@ import java.sql.Timestamp
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.createType
-import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.isSupertypeOf
 import kotlin.reflect.jvm.javaType
 
@@ -87,19 +86,19 @@ open class Table<E : Entity>(
         add(entity)
     }
 
-    fun add(entity: E): Int? = insert(entity).getId()?.apply { entity.id = this }
-    fun add(vararg entities: E): List<Int> = add(entities.toList())
-    fun add(entities: List<E>): List<Int> = if (entities.isEmpty()) listOf() else insert(entities).getIds()
-        .apply { forEachIndexed { index, id -> entities[index].id = id } }
+    fun add(entity: E): E? = insert(entity).getId()?.let { id -> entity.apply { this.id = id } }
+    fun add(vararg entities: E): List<E> = add(entities.toList())
+    fun add(entities: List<E>): List<E> = if (entities.isEmpty()) listOf() else insert(entities).getIds()
+        .let { idList -> entities.apply { idList.forEachIndexed { index, id -> entities[index].id = id } } }
 
 
     operator fun get(id: Int): E? = findById(id)
-    operator fun contains(entity: E): Boolean = selectAll().apply {
+    operator fun contains(entity: E): Boolean = select().apply {
         entity.properties.forEach { prop ->
             if (prop.name != "id")
                 where { prop eq prop.returnValue(entity) }
         }
-    }.getEntity() != null
+    }.getResultSet().next()
 
     fun all(loadReferences: Boolean = true): List<E> = selectAll().apply { if (!loadReferences) lazy() }.getEntities()
     fun findAll(loadReferences: Boolean = true, condition: WhereCondition): List<E> = selectAll().where(condition)
@@ -122,7 +121,7 @@ open class Table<E : Entity>(
     fun update(entities: List<E>) = entities.forEach { update(it) }
 
     operator fun minusAssign(entity: E) = delete(entity)
-    fun delete(entity: E) = deleteById(entity.id)
+    fun delete(entity: E): Unit = deleteById(entity.id)
 
     fun <T> getValuesOfColumn(prop: KMutableProperty1<E, T>): List<T> = select(prop).getEntities().map(prop)
 
@@ -234,10 +233,13 @@ open class Table<E : Entity>(
 
     companion object {
         val tables = HashMap<KClass<*>, Table<*>>()
+
         @Suppress("UNCHECKED_CAST")
-        inline operator fun <reified T: Entity> invoke() = tables[T::class] as Table<T>?
+        inline operator fun <reified T : Entity> invoke() = tables[T::class] as Table<T>?
+            ?: throw LoggerException("Table for class ${T::class.simpleName} was not initialized!")
+
         @Suppress("UNCHECKED_CAST")
-        operator fun <T: Entity> get(kClass: KClass<T>) = tables[kClass] as Table<Entity>?
+        internal operator fun <T : Entity> get(kClass: KClass<T>) = tables[kClass] as Table<Entity>?
     }
 
 }
