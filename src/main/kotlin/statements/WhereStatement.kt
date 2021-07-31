@@ -1,7 +1,9 @@
 package statements
 
 import Entity
+import Table
 import sql_type_functions.*
+import utils.columnName
 import utils.fullColumnName
 import kotlin.reflect.KMutableProperty1
 
@@ -10,7 +12,11 @@ typealias WhereCondition = WhereStatement.() -> String
 class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
     private val conditions = listOf(conditionBody()).mapNotNull { it }.toMutableList()
 
-    val columns = mutableSetOf<String>()
+    class EntityProperty<T : Entity>(table: Table<T>, columnName: String) {
+        val fullColumnName = "${table.tableName}.$columnName"
+
+        constructor(table: Table<T>, prop: KMutableProperty1<*, *>) : this(table, prop.columnName)
+    }
 
     fun addCondition(conditionBody: WhereCondition?) {
         if (conditionBody != null)
@@ -20,6 +26,9 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
     fun getSql(): String = if (conditions.isEmpty()) ""
     else " WHERE " + conditions.joinToString(" AND ")
 
+
+    fun <E : Entity> Table<E>.entityProperty(prop: KMutableProperty1<*, *>) = EntityProperty(this, prop)
+    fun <E : Entity> Table<E>.entityProperty(columnName: String) = EntityProperty(this, columnName)
 
     infix fun <T : Any?> T.eq(obj: Any?): String =
         if (obj == null) toSql() + " IS NULL" else boolOperator(obj, "=")
@@ -59,26 +68,25 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
 
 
     private fun <T : Any?> T.boolOperator(obj: Any?, strOperator: String): String =
-        (if (this is KMutableProperty1<*, *>) fullColumnName else this.toString()) +
-                " $strOperator " + obj.toSql()
+        this.toSql() + " $strOperator " + obj.toSql()
 
     private fun <T : Any?> T.toSql() = when (this) {
         is String -> "'$this'"
         is Entity -> id.toString()
+        is EntityProperty<*> -> fullColumnName
         is List<Any?> -> joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
         is KMutableProperty1<*, *> -> fullColumnName
-            .also { columns.add(it) }
         else -> this.toString()
     }
 
 
     val <S : String?, T : KMutableProperty1<*, S>> T.sqlString
-        get() = SqlString(fullColumnName).also { columns.add(fullColumnName) }
+        get() = SqlString(fullColumnName)
 
     val <N : Number?, T : KMutableProperty1<*, N>> T.sqlInt
-        get() = SqlNumber(fullColumnName).also { columns.add(fullColumnName) }
+        get() = SqlNumber(fullColumnName)
 
     val <N : Number?, T : KMutableProperty1<*, List<N>>> T.sqlList
-        get() = SqlNumber(fullColumnName).also { columns.add(fullColumnName) }
+        get() = SqlNumber(fullColumnName)
 
 }

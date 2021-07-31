@@ -4,11 +4,13 @@ val database: Database
 
 
 fun config(func: Config.() -> Unit): Unit = Config.apply(func).run {
+    val loadRefs = alwaysLoadReferencesWhenAddingEntity
+    alwaysLoadReferencesWhenAddingEntity = false
     with (tables()) {
         forEach { it.defaultEntities.save() }
-        forEach { it.cache.clear() }
         forEach { it.referencesAddMethods.forEach { it() } }
     }
+    alwaysLoadReferencesWhenAddingEntity = loadRefs
 }
 
 object Config {

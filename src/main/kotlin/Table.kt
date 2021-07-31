@@ -100,7 +100,7 @@ open class Table<E : Entity>(
     operator fun contains(entity: E): Boolean = select().apply {
         entity.properties.forEach { prop ->
             if (prop.name != "id")
-                where { prop eq prop.returnValue(entity) }
+                where { this@Table.entityProperty(prop) eq prop.returnValue(entity) }
         }
     }.getResultSet().next()
 
@@ -112,9 +112,9 @@ open class Table<E : Entity>(
         selectAll().where(condition).setLazy(!loadReferences).getEntities()
 
     fun findById(id: Int, loadReferences: Boolean = Config.loadReferencesByDefault): E? =
-        cache[id, loadReferences] ?: first(loadReferences) { Entity::id eq id }
+        cache[id, loadReferences] ?: first(loadReferences) { this@Table.entityProperty("id") eq id }
 
-    fun findIdOf(condition: WhereCondition): Int? = select(Entity::id).where(condition).getEntity()?.id
+    fun findIdOf(condition: WhereCondition): Int? = SelectStatement(this, listOf("id")).where(condition).getEntity()?.id
 
     fun first(loadReferences: Boolean = Config.loadReferencesByDefault, condition: WhereCondition? = null): E? =
         selectAll().where(condition).limit(1).setLazy(!loadReferences).getEntity()

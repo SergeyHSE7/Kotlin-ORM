@@ -10,6 +10,7 @@ import sql_type_functions.SqlList
 import utils.*
 import java.sql.ResultSet
 import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.KProperty1
 
 data class OrderColumn(val column: String, val isDescending: Boolean = false)
 
@@ -50,19 +51,20 @@ class SelectStatement<E : Entity>(
 
     fun innerJoin(joinTable: Table<*>, condition: WhereCondition) =
         this.apply { joinTables.add(JoinTable(JoinType.Inner, joinTable, condition)) }
-    inline fun <reified T: Entity> innerJoinBy(property: KMutableProperty1<E, T>) =
-        innerJoin(Table<T>()) { property eq "${Table<T>().tableName}.id" }
+
+    inline fun <reified T: Entity, R: T?> innerJoinBy(property: KMutableProperty1<E, R>) =
+        innerJoin(Table<T>()) { property eq Table<T>().entityProperty("id") }
 
     fun lazy() = setLazy(true)
     fun setLazy(lazy: Boolean) = this.apply { this.lazy = lazy }
 
     fun orderBy(vararg props: KMutableProperty1<E, *>) =
-        this.apply { orderColumns.addAll(props.map { OrderColumn(it.columnName) }) }
+        this.apply { orderColumns.addAll(props.map { OrderColumn(it.fullColumnName) }) }
 
     fun orderByDescending(vararg props: KMutableProperty1<E, *>) =
         this.apply {
             if (props.isEmpty()) orderColumns.add(OrderColumn("id", true))
-            else orderColumns.addAll(props.map { OrderColumn(it.columnName, true) })
+            else orderColumns.addAll(props.map { OrderColumn(it.fullColumnName, true) })
         }
 
     fun limit(limit: Int) = this.apply { this.limit = limit }
@@ -86,7 +88,7 @@ class SelectStatement<E : Entity>(
         }
 
     fun getSql(): String =
-        "SELECT ${if (selectAll) "*" else columns.apply { addAll(whereStatement.columns) }.joinToString { it }} " +
+        "SELECT ${if (selectAll) "*" else columns.joinToString { it }} " +
                 "FROM ${table.tableName}" +
                 joinTables.joinToString("") +
                 whereStatement.getSql() +
