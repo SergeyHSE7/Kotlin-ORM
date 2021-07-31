@@ -32,8 +32,12 @@ abstract class Entity {
         }
 }
 
+fun <E : Entity> E.loadReferences(): E? = table?.findById(id, loadReferences = true) as E?
+internal fun <E : Entity?> E.loadReferencesIf(condition: Boolean): E? =
+    if (condition && this != null) table?.get(id) as E? else this
 
 fun <E : Entity> E.save(): E? = table?.add(this) as E?
+
 fun <E : Entity> List<E>.save(): List<E> = firstOrNull()?.table?.let { it.add(this) as List<E> } ?: listOf()
 
 inline fun <reified E : Entity> E.update(vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {

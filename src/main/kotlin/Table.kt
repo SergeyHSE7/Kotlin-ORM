@@ -26,7 +26,8 @@ inline fun <reified E : Entity> autoTable(noinline columnsBody: Table<E>.CreateM
                 prop.returnType.isSupertypeOf(Time::class.createType()) -> time(prop as KMutableProperty1<E, Time?>)
                 prop.returnType.isSupertypeOf(Timestamp::class.createType()) -> timestamp(prop as KMutableProperty1<E, Timestamp?>)
                 prop.returnType.isSupertypeOf(Date::class.createType()) -> date(prop as KMutableProperty1<E, Date?>)
-                prop.returnType.isSupertypeOf(BigDecimal::class.createType()) -> decimal(prop as KMutableProperty1<E, BigDecimal?>, 10, 2)
+                prop.returnType.isSupertypeOf(BigDecimal::class.createType()) ->
+                    decimal(prop as KMutableProperty1<E, BigDecimal?>, 10, 2)
                 prop.returnType.isSupertypeOf(Float::class.createType()) -> real(prop as KMutableProperty1<E, Float?>)
                 prop.returnType.isSupertypeOf(Double::class.createType()) -> double(prop as KMutableProperty1<E, Double?>)
                 prop.returnType.isSupertypeOf(String::class.createType()) -> text(prop as KMutableProperty1<E, String?>)
@@ -87,9 +88,12 @@ open class Table<E : Entity>(
     }
 
     fun add(entity: E): E? = insert(entity).getId()?.let { id -> entity.apply { this.id = id } }
+        .loadReferencesIf(Config.alwaysLoadReferencesWhenAddingEntity)
+
     fun add(vararg entities: E): List<E> = add(entities.toList())
     fun add(entities: List<E>): List<E> = if (entities.isEmpty()) listOf() else insert(entities).getIds()
         .let { idList -> entities.apply { idList.forEachIndexed { index, id -> entities[index].id = id } } }
+        .mapNotNull { it.loadReferencesIf(Config.alwaysLoadReferencesWhenAddingEntity) }
 
 
     operator fun get(id: Int): E? = findById(id)
@@ -104,25 +108,25 @@ open class Table<E : Entity>(
     fun containsAny(entities: List<E>): Boolean = entities.any(::contains)
     operator fun contains(entities: List<E>): Boolean = containsAll(entities)
 
-    fun all(loadReferences: Boolean = true, condition: WhereCondition? = null): List<E> = selectAll().where(condition)
-        .apply { if (!loadReferences) lazy() }.getEntities()
+    fun all(loadReferences: Boolean = Config.loadReferencesByDefault, condition: WhereCondition? = null): List<E> =
+        selectAll().where(condition).setLazy(!loadReferences).getEntities()
 
-    fun findById(id: Int, loadReferences: Boolean = true): E? =
+    fun findById(id: Int, loadReferences: Boolean = Config.loadReferencesByDefault): E? =
         cache[id, loadReferences] ?: first(loadReferences) { Entity::id eq id }
 
     fun findIdOf(condition: WhereCondition): Int? = select(Entity::id).where(condition).getEntity()?.id
 
-    fun first(loadReferences: Boolean = true, condition: WhereCondition? = null): E? =
-        selectAll().where(condition).limit(1).apply { if (!loadReferences) lazy() }.getEntity()
+    fun first(loadReferences: Boolean = Config.loadReferencesByDefault, condition: WhereCondition? = null): E? =
+        selectAll().where(condition).limit(1).setLazy(!loadReferences).getEntity()
 
-    fun last(loadReferences: Boolean = true, condition: WhereCondition? = null): E? =
-        selectAll().where(condition).orderByDescending().limit(1).apply { if (!loadReferences) lazy() }.getEntity()
+    fun last(loadReferences: Boolean = Config.loadReferencesByDefault, condition: WhereCondition? = null): E? =
+        selectAll().where(condition).orderByDescending().limit(1).setLazy(!loadReferences).getEntity()
 
-    fun take(n: Int, loadReferences: Boolean = true) =
-        selectAll().limit(n).apply { if (!loadReferences) lazy() }.getEntities()
+    fun take(n: Int, loadReferences: Boolean = Config.loadReferencesByDefault) =
+        selectAll().limit(n).setLazy(!loadReferences).getEntities()
 
-    fun takeLast(n: Int, loadReferences: Boolean = true) =
-        selectAll().orderByDescending().limit(n).apply { if (!loadReferences) lazy() }.getEntities()
+    fun takeLast(n: Int, loadReferences: Boolean = Config.loadReferencesByDefault) =
+        selectAll().orderByDescending().limit(n).setLazy(!loadReferences).getEntities()
 
     fun count(condition: WhereCondition): Int = select().where(condition).size
 

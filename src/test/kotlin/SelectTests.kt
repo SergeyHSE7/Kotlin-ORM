@@ -11,6 +11,11 @@ class SelectTests : FreeSpec({
     "SELECT COUNT(*)" {
         UsersTable.size shouldBe defaultUsers.size
     }
+    "add check" {
+        val user = User(username = "Max", address = Address(1)).save()!!
+        user.address!!.country shouldBe "USA"
+        user.delete()
+    }
     "Not-existing entity equals null" {
         UsersTable[100] shouldBe null
     }

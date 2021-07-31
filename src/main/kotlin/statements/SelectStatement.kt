@@ -36,7 +36,7 @@ class SelectStatement<E : Entity>(
         else " ${joinType.name.uppercase()} JOIN ${table.tableName} ON ${WhereStatement().condition()}"
     }
 
-    private var lazy: Boolean = false
+    private var lazy: Boolean = !Config.loadReferencesByDefault
     private var limit: Int? = null
     private var offset: Int? = null
     private val joinTables = mutableListOf<JoinTable>()
@@ -50,8 +50,11 @@ class SelectStatement<E : Entity>(
 
     fun innerJoin(joinTable: Table<*>, condition: WhereCondition) =
         this.apply { joinTables.add(JoinTable(JoinType.Inner, joinTable, condition)) }
+    inline fun <reified T: Entity> innerJoinBy(property: KMutableProperty1<E, T>) =
+        innerJoin(Table<T>()) { property eq "${Table<T>().tableName}.id" }
 
-    fun lazy() = this.apply { lazy = true }
+    fun lazy() = setLazy(true)
+    fun setLazy(lazy: Boolean) = this.apply { this.lazy = lazy }
 
     fun orderBy(vararg props: KMutableProperty1<E, *>) =
         this.apply { orderColumns.addAll(props.map { OrderColumn(it.columnName) }) }
