@@ -1,5 +1,6 @@
 package statements
 
+import Entity
 import sql_type_functions.*
 import utils.fullColumnName
 import kotlin.reflect.KMutableProperty1
@@ -63,6 +64,7 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
 
     private fun <T : Any?> T.toSql() = when (this) {
         is String -> "'$this'"
+        is Entity -> id.toString()
         is List<Any?> -> joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
         is KMutableProperty1<*, *> -> fullColumnName
             .also { columns.add(it) }

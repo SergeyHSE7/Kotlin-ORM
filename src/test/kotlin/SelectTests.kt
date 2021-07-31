@@ -21,11 +21,30 @@ class SelectTests : FreeSpec({
     }
 
     "WHERE check" {
+        UsersTable.all { User::enabled eq true }.all { it.enabled } shouldBe true
         UsersTable.findIdOf { User::username eq "Marco" } shouldBe 2
-        UsersTable.find { (User::enabled eq false) and (User::username startsWith "S") }?.username shouldBe "Simon"
+        UsersTable.first { (User::enabled eq false) and (User::username startsWith "S") }?.username shouldBe "Simon"
 
         println()
         UsersTable.getValuesOfColumn(User::username).forEach { println(it) }
+    }
+
+    "count check" {
+        UsersTable.count { User::address eq Address(5) } shouldBe 2
+        UsersTable.count { (User::address eq 5) and (User::age eq 42) } shouldBe 1
+        UsersTable.count { (User::address eq 5) and (User::age eq 43) and (User::enabled eq false) } shouldBe 0
+    }
+
+    "first and last check" {
+        UsersTable.first()!!.compareValuesWith(defaultUsers.first()) shouldBe true
+        UsersTable.last()!!.compareValuesWith(defaultUsers.last()) shouldBe true
+        UsersTable.last { User::address eq 5 }!!.username shouldBe "Alex"
+    }
+
+    "contains check" {
+        (defaultUsers[2] in UsersTable) shouldBe true
+        (defaultUsers in UsersTable) shouldBe true
+        (User(username = "Anonymous") in UsersTable) shouldBe false
     }
 
     "LIMIT check" {

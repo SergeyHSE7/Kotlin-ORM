@@ -20,7 +20,7 @@ abstract class Entity {
 
     inline fun <reified E : Entity> oneToMany(keyProp: KMutableProperty1<E, *>) =
         ReadOnlyProperty<Any?, List<E>> { thisRef, _ ->
-            Table<E>().findAll { keyProp eq (thisRef as Entity).id }
+            Table<E>().all { keyProp eq (thisRef as Entity).id }
         }
 
     inline fun <reified K : Entity, V : Entity?> manyToMany(
@@ -28,7 +28,7 @@ abstract class Entity {
         valueProp: KMutableProperty1<K, V>
     ) =
         ReadOnlyProperty<Any?, List<V>> { thisRef, _ ->
-            Table<K>().findAll { keyProp eq (thisRef as Entity).id }.map { valueProp.get(it) }
+            Table<K>().all { keyProp eq (thisRef as Entity).id }.map { valueProp.get(it) }
         }
 }
 

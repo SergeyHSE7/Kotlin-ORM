@@ -30,6 +30,7 @@ class SelectStatement<E : Entity>(
     enum class JoinType {
         Inner, Left, Right, Full, Cross
     }
+
     data class JoinTable(val joinType: JoinType, val table: Table<*>, val condition: WhereCondition) {
         override fun toString(): String = if (joinType == JoinType.Cross) " CROSS JOIN ${table.tableName}"
         else " ${joinType.name.uppercase()} JOIN ${table.tableName} ON ${WhereStatement().condition()}"
@@ -44,6 +45,9 @@ class SelectStatement<E : Entity>(
     private var whereStatement: WhereStatement = WhereStatement()
 
     fun where(conditionBody: WhereCondition?) = this.apply { whereStatement.addCondition(conditionBody) }
+//    fun where(vararg values: Pair<KMutableProperty1<E, *>, Any?>) =
+//        this.apply { values.forEach { where { it.first eq it.second } } }
+
     fun innerJoin(joinTable: Table<*>, condition: WhereCondition) =
         this.apply { joinTables.add(JoinTable(JoinType.Inner, joinTable, condition)) }
 
@@ -53,12 +57,18 @@ class SelectStatement<E : Entity>(
         this.apply { orderColumns.addAll(props.map { OrderColumn(it.columnName) }) }
 
     fun orderByDescending(vararg props: KMutableProperty1<E, *>) =
-        this.apply { orderColumns.addAll(props.map { OrderColumn(it.columnName, true) }) }
+        this.apply {
+            if (props.isEmpty()) orderColumns.add(OrderColumn("id", true))
+            else orderColumns.addAll(props.map { OrderColumn(it.columnName, true) })
+        }
 
     fun limit(limit: Int) = this.apply { this.limit = limit }
     fun offset(offset: Int) = this.apply { this.offset = offset }
 
     fun getResultSet(): ResultSet = database.executeQuery(getSql().also { Logger.tag("SELECT").info { it } })
+
+    val size: Int
+        get() = getResultSet().map {}.size
 
     fun getEntity(): E? = getResultSet()
         .run { if (next()) getEntity(table, lazy) else null }

@@ -100,17 +100,32 @@ open class Table<E : Entity>(
         }
     }.getResultSet().next()
 
-    fun all(loadReferences: Boolean = true): List<E> = selectAll().apply { if (!loadReferences) lazy() }.getEntities()
-    fun findAll(loadReferences: Boolean = true, condition: WhereCondition): List<E> = selectAll().where(condition)
+    fun containsAll(entities: List<E>): Boolean = entities.all(::contains)
+    fun containsAny(entities: List<E>): Boolean = entities.any(::contains)
+    operator fun contains(entities: List<E>): Boolean = containsAll(entities)
+
+    fun all(loadReferences: Boolean = true, condition: WhereCondition? = null): List<E> = selectAll().where(condition)
         .apply { if (!loadReferences) lazy() }.getEntities()
 
-    fun find(loadReferences: Boolean = true, condition: WhereCondition): E? = selectAll().where(condition)
-        .apply { if (!loadReferences) lazy() }.getEntity()
-
     fun findById(id: Int, loadReferences: Boolean = true): E? =
-        cache[id, loadReferences] ?: find(loadReferences) { Entity::id eq id }
+        cache[id, loadReferences] ?: first(loadReferences) { Entity::id eq id }
 
     fun findIdOf(condition: WhereCondition): Int? = select(Entity::id).where(condition).getEntity()?.id
+
+    fun first(loadReferences: Boolean = true, condition: WhereCondition? = null): E? =
+        selectAll().where(condition).limit(1).apply { if (!loadReferences) lazy() }.getEntity()
+
+    fun last(loadReferences: Boolean = true, condition: WhereCondition? = null): E? =
+        selectAll().where(condition).orderByDescending().limit(1).apply { if (!loadReferences) lazy() }.getEntity()
+
+    fun take(n: Int, loadReferences: Boolean = true) =
+        selectAll().limit(n).apply { if (!loadReferences) lazy() }.getEntities()
+
+    fun takeLast(n: Int, loadReferences: Boolean = true) =
+        selectAll().orderByDescending().limit(n).apply { if (!loadReferences) lazy() }.getEntities()
+
+    fun count(condition: WhereCondition): Int = select().where(condition).size
+
 
     operator fun set(id: Int, entity: E) = update(entity) { this.id = id }
     inline fun update(entity: E, vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {
@@ -124,6 +139,7 @@ open class Table<E : Entity>(
     fun delete(entity: E): Unit = deleteById(entity.id)
 
     fun <T> getValuesOfColumn(prop: KMutableProperty1<E, T>): List<T> = select(prop).getEntities().map(prop)
+
 
     inner class Reference<P : Entity?>(
         property: KMutableProperty1<E, P>,
@@ -167,6 +183,7 @@ open class Table<E : Entity>(
             if (property.returnType.isMarkedNullable)
                 Logger.warn { "Nullable value shouldn't be marked as not null! (column: $tableName.$name)" }
         }
+
         fun unique() = this.also { isUnique = true }
         fun primaryKey() = this.also { isPrimaryKey = true }
         fun default(value: T) = this.also { defaultValue = value }

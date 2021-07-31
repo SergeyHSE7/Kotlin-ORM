@@ -1,13 +1,13 @@
-import Config.tables
 
 val database: Database
     get() = Config.database ?: throw LoggerException("First you need to set database property in config method!")
 
 
-fun config(func: Config.() -> Unit) = Config.apply(func).also {
-    val tables = tables()
-    tables.forEach { it.defaultEntities.save() }
-    tables.forEach { it.referencesAddMethods.forEach { it() } }
+fun config(func: Config.() -> Unit): Unit = Config.apply(func).run {
+    with (tables()) {
+        forEach { it.defaultEntities.save() }
+        forEach { it.referencesAddMethods.forEach { it() } }
+    }
 }
 
 object Config {
