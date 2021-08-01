@@ -1,18 +1,20 @@
 package statements
 
+import Config
 import Entity
 import Table
-import utils.columnName
 import database
 import org.tinylog.Logger
-import sql_type_functions.SqlNumber
 import sql_type_functions.SqlList
+import sql_type_functions.SqlNumber
 import utils.*
 import java.sql.ResultSet
 import kotlin.reflect.KMutableProperty1
-import kotlin.reflect.KProperty1
 
-data class OrderColumn(val column: String, val isDescending: Boolean = false)
+
+data class OrderColumn(val fullColumnName: String, val isDescending: Boolean = false) {
+    constructor(prop: EntityProperty<*>, isDescending: Boolean = false) : this(prop.fullColumnName, isDescending)
+}
 
 fun <E : Entity> Table<E>.selectAll(): SelectStatement<E> = SelectStatement(this, selectAll = true)
 fun <E : Entity> Table<E>.select(vararg props: KMutableProperty1<*, *>): SelectStatement<E> =
@@ -52,7 +54,7 @@ class SelectStatement<E : Entity>(
     fun innerJoin(joinTable: Table<*>, condition: WhereCondition) =
         this.apply { joinTables.add(JoinTable(JoinType.Inner, joinTable, condition)) }
 
-    inline fun <reified T: Entity, R: T?> innerJoinBy(property: KMutableProperty1<E, R>) =
+    inline fun <reified T : Entity, R : T?> innerJoinBy(property: KMutableProperty1<E, R>) =
         innerJoin(Table<T>()) { property eq Table<T>().entityProperty("id") }
 
     fun lazy() = setLazy(true)
@@ -63,7 +65,7 @@ class SelectStatement<E : Entity>(
 
     fun orderByDescending(vararg props: KMutableProperty1<E, *>) =
         this.apply {
-            if (props.isEmpty()) orderColumns.add(OrderColumn("id", true))
+            if (props.isEmpty()) orderColumns.add(OrderColumn(EntityProperty(table, "id"), true))
             else orderColumns.addAll(props.map { OrderColumn(it.fullColumnName, true) })
         }
 
@@ -92,7 +94,7 @@ class SelectStatement<E : Entity>(
                 "FROM ${table.tableName}" +
                 joinTables.joinToString("") +
                 whereStatement.getSql() +
-                (" ORDER BY " + orderColumns.joinToString { it.column + if (it.isDescending) " DESC" else " ASC" })
+                (" ORDER BY " + orderColumns.joinToString { it.fullColumnName + if (it.isDescending) " DESC" else " ASC" })
                     .ifTrue(orderColumns.isNotEmpty()) +
                 " LIMIT $limit".ifTrue(limit != null) +
                 " OFFSET $offset".ifTrue(offset != null)

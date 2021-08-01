@@ -2,7 +2,8 @@ import org.tinylog.Logger
 import statements.update
 import utils.returnValue
 import kotlin.properties.ReadOnlyProperty
-import kotlin.reflect.*
+import kotlin.reflect.KClass
+import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.memberProperties
 
 abstract class Entity {
@@ -20,7 +21,7 @@ abstract class Entity {
 
     inline fun <reified E : Entity> oneToMany(keyProp: KMutableProperty1<E, *>) =
         ReadOnlyProperty<Any?, List<E>> { thisRef, _ ->
-            Table<E>().all { keyProp eq (thisRef as Entity).id }
+            Table<E>().getAll { keyProp eq (thisRef as Entity).id }
         }
 
     inline fun <reified K : Entity, V : Entity?> manyToMany(
@@ -28,7 +29,7 @@ abstract class Entity {
         valueProp: KMutableProperty1<K, V>
     ) =
         ReadOnlyProperty<Any?, List<V>> { thisRef, _ ->
-            Table<K>().all { keyProp eq (thisRef as Entity).id }.map { valueProp.get(it) }
+            Table<K>().getAll { keyProp eq (thisRef as Entity).id }.map { valueProp.get(it) }
         }
 }
 

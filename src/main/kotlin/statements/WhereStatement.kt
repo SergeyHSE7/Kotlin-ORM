@@ -2,21 +2,22 @@ package statements
 
 import Entity
 import Table
-import sql_type_functions.*
+import sql_type_functions.SqlNumber
+import sql_type_functions.SqlString
 import utils.columnName
 import utils.fullColumnName
 import kotlin.reflect.KMutableProperty1
 
 typealias WhereCondition = WhereStatement.() -> String
 
+class EntityProperty<T : Entity>(table: Table<T>, columnName: String) {
+    val fullColumnName = "${table.tableName}.$columnName"
+
+    constructor(table: Table<T>, prop: KMutableProperty1<*, *>) : this(table, prop.columnName)
+}
+
 class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
     private val conditions = listOf(conditionBody()).mapNotNull { it }.toMutableList()
-
-    class EntityProperty<T : Entity>(table: Table<T>, columnName: String) {
-        val fullColumnName = "${table.tableName}.$columnName"
-
-        constructor(table: Table<T>, prop: KMutableProperty1<*, *>) : this(table, prop.columnName)
-    }
 
     fun addCondition(conditionBody: WhereCondition?) {
         if (conditionBody != null)

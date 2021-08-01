@@ -4,10 +4,9 @@ import entities.User
 import entities.UsersTable
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
-import statements.*
 
 class UpdateTests : FreeSpec({
-    "UPDATE check" {
+    "UPDATE" {
         val address = AddressesTable[1]!!
         address.city = "Chicago"
         AddressesTable.update(address, Address::city)

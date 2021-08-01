@@ -19,7 +19,7 @@ class TableOperationsTests : FreeSpec({
     "Drop table" {
         TestTable.dropTable()
         shouldThrowExactly<PSQLException> {
-            TestTable.all()
+            TestTable.getAll()
         }
     }
 })

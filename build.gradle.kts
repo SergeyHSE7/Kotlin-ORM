@@ -13,11 +13,11 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21")
     implementation("org.postgresql:postgresql:42.2.10")
-    implementation(kotlin("reflect"))
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
 
-    implementation("org.atteo:evo-inflector:1.2.2")
+    implementation("org.atteo:evo-inflector:1.3")
 
     implementation("org.tinylog:tinylog-api:2.4.0-M1")
     implementation("org.tinylog:tinylog-impl:2.4.0-M1")

@@ -104,11 +104,11 @@ open class Table<E : Entity>(
         }
     }.getResultSet().next()
 
-    fun containsAll(entities: List<E>): Boolean = entities.all(::contains)
-    fun containsAny(entities: List<E>): Boolean = entities.any(::contains)
-    operator fun contains(entities: List<E>): Boolean = containsAll(entities)
+    fun containsAll(entities: Iterable<E>): Boolean = entities.all(::contains)
+    fun containsAny(entities: Iterable<E>): Boolean = entities.any(::contains)
+    operator fun contains(entities: Iterable<E>): Boolean = containsAll(entities)
 
-    fun all(loadReferences: Boolean = Config.loadReferencesByDefault, condition: WhereCondition? = null): List<E> =
+    fun getAll(loadReferences: Boolean = Config.loadReferencesByDefault, condition: WhereCondition? = null): List<E> =
         selectAll().where(condition).setLazy(!loadReferences).getEntities()
 
     fun findById(id: Int, loadReferences: Boolean = Config.loadReferencesByDefault): E? =
@@ -143,6 +143,10 @@ open class Table<E : Entity>(
     fun delete(entity: E): Unit = deleteById(entity.id)
 
     fun <T> getValuesOfColumn(prop: KMutableProperty1<E, T>): List<T> = select(prop).getEntities().map(prop)
+
+    fun all(condition: WhereCondition): Boolean = select().where(condition).lazy().size == size
+    fun any(condition: WhereCondition): Boolean = select().where(condition).limit(1).lazy().getResultSet().next()
+    fun none(condition: WhereCondition): Boolean = !any(condition)
 
 
     inner class Reference<P : Entity?>(
