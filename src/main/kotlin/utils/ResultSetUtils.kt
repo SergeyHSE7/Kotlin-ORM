@@ -2,13 +2,9 @@ package utils
 
 import Entity
 import Table
-import org.postgresql.util.PSQLException
-import java.sql.Date
 import java.sql.ResultSet
-import java.sql.Time
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.createInstance
-import kotlin.reflect.full.hasAnnotation
 
 fun <E : Entity> ResultSet.getEntity(table: Table<E>, lazy: Boolean): E {
     val entity: E = table.entityClass.createInstance()
@@ -23,8 +19,7 @@ fun <E : Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>, laz
     kotlin.runCatching {
         if (column.refTable != null) {
             val index = getValue(column) as? Int ?: return
-            val obj = if (lazy || column.property.hasAnnotation<FetchLazy>())
-                column.refTable!!.entityClass.createInstance().apply { id = index }
+            val obj = if (lazy) column.refTable!!.entityClass.createInstance().apply { id = index }
             else column.refTable!!.findById(index, false)
 
             prop.set(entity, obj as T)

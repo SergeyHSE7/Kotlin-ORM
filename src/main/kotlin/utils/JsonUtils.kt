@@ -1,49 +1,38 @@
 package utils
 
 import Entity
+import json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import kotlin.reflect.KProperty1
-import kotlin.reflect.full.hasAnnotation
-import kotlin.reflect.full.memberProperties
 
 
-@Target(AnnotationTarget.PROPERTY)
-annotation class Hidden
-
-@Target(AnnotationTarget.PROPERTY)
-annotation class FetchLazy
+inline fun <reified T> T.toJson(): String = json.encodeToString(this)
 
 
-fun Entity.toJsonWithout(vararg excludeProps: KProperty1<out Entity, *>): String =
-    this::class.memberProperties.excludeHidden().exclude(Entity::properties, *excludeProps)
-        .joinToString(", ", "{", "}") { it.toJson(this) }
-
-fun Entity.toJsonOnly(vararg serializeProps: KProperty1<out Entity, *>) = serializeProps.toList()
-    .joinToString(", ", "{", "}") { it.toJson(this) }
-
-fun Entity.toJson(all: Boolean = false): String =
-    (if (all) this::class.memberProperties else properties.excludeHidden())
-        .exclude(Entity::properties)
-        .joinToString(", ", "{", "}") { it.toJson(this) }
-
-
-private fun KProperty1<out Entity, *>.toJson(entity: Entity) = "\"${name}\": " +
-        if (hasAnnotation<FetchLazy>() && returnValue(entity) != null)
-            "{ \"id\": ${(returnValue(entity) as Entity).id} }"
-        else returnValue(entity).toJson()
-
-private fun Any?.toJson(): String = when (this) {
-    is String -> "\"$this\""
-    is Iterable<Any?> -> joinToString(",", "[", "]") { it.toJson() }
-    is Entity -> toJson()
-    else -> toString()
+inline fun <reified E : Entity?> Collection<E>.toJsonOnly(vararg serializeProps: KProperty1<out Entity, *>): String {
+    val serializeKeys = serializeProps.map { it.name }
+    val jsonObjects = map { JsonObject(json.encodeToJsonElement(it).jsonObject.filterKeys { key -> key in serializeKeys }) }
+    return json.encodeToString(jsonObjects)
 }
 
-private fun Iterable<KProperty1<out Entity, *>>.excludeHidden() =
-    toMutableList().apply {
-        removeAll { prop -> prop.hasAnnotation<Hidden>() }
-    }
+inline fun <reified E : Entity?> E.toJsonOnly(vararg serializeProps: KProperty1<out Entity, *>): String {
+    val serializeKeys = serializeProps.map { it.name }
+    val jsonObject = JsonObject(json.encodeToJsonElement(this).jsonObject.filterKeys { it in serializeKeys })
+    return json.encodeToString(jsonObject)
+}
 
-private fun Iterable<KProperty1<out Entity, *>>.exclude(vararg excludeProps: KProperty1<out Entity, *>) =
-    toMutableList().apply {
-        removeAll { prop -> excludeProps.any { it.name == prop.name } }
-    }
+
+inline fun <reified E : Entity?> Collection<E>.toJsonWithout(vararg excludeProps: KProperty1<out Entity, *>): String {
+    val excludeKeys = excludeProps.map { it.name }
+    val jsonObjects = map { JsonObject(json.encodeToJsonElement(it).jsonObject.filterKeys { key -> key !in excludeKeys }) }
+    return json.encodeToString(jsonObjects)
+}
+
+inline fun <reified E : Entity?> E.toJsonWithout(vararg excludeProps: KProperty1<out Entity, *>): String {
+    val excludeKeys = excludeProps.map { it.name }
+    val jsonObject = JsonObject(json.encodeToJsonElement(this).jsonObject.filterKeys { it !in excludeKeys })
+    return json.encodeToString(jsonObject)
+}

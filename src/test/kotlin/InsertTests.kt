@@ -11,7 +11,10 @@ class InsertTests : FreeSpec({
             user = "postgres",
             password = "123456"
         )
-
+        jsonFormat = {
+            encodeDefaults = true
+            prettyPrint = true
+        }
     }
     val newEntity = Test(string = "unknown", int = 5)
 

@@ -1,8 +1,11 @@
 package entities
 
+import Action
 import Entity
 import autoTable
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class User(
     override var id: Int = 0,
     var username: String = "",

@@ -1,12 +1,16 @@
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonBuilder
 
-val database: Database
-    get() = Config.database ?: throw LoggerException("First you need to set database property in config method!")
+val database: Database by lazy {
+    Config.database ?: throw LoggerException("First you need to set database property in config method!")
+}
 
+val json: Json by lazy { Json(builderAction = Config.jsonFormat) }
 
 fun config(func: Config.() -> Unit): Unit = Config.apply(func).run {
     val loadRefs = alwaysLoadReferencesWhenAddingEntity
     alwaysLoadReferencesWhenAddingEntity = false
-    with (tables()) {
+    with(tables()) {
         forEach { it.defaultEntities.save() }
         forEach { it.referencesAddMethods.forEach { it() } }
     }
@@ -25,5 +29,7 @@ object Config {
     internal var alwaysLoadReferencesWhenAddingEntity: Boolean = true
 
     internal var tables: () -> List<Table<*>> = { listOf() }
+
+    internal var jsonFormat: JsonBuilder.() -> Unit = { }
 
 }

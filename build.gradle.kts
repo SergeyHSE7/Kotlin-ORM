@@ -2,7 +2,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     application
-    kotlin("jvm") version "1.5.10"
+    kotlin("jvm") version "1.5.21"
+    kotlin("plugin.serialization") version "1.5.21"
 }
 
 group = "me.sergey"
@@ -14,11 +15,11 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21")
-    implementation("org.postgresql:postgresql:42.2.10")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
 
+    implementation("org.postgresql:postgresql:42.2.10")
     implementation("org.atteo:evo-inflector:1.3")
-
     implementation("org.tinylog:tinylog-api:2.4.0-M1")
     implementation("org.tinylog:tinylog-impl:2.4.0-M1")
 

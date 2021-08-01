@@ -1,8 +1,10 @@
 package entities
 
 import Entity
+import kotlinx.serialization.Serializable
 import table
 
+@Serializable
 data class Address(
     override var id: Int = 0,
     var country: String = "",
