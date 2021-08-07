@@ -3,11 +3,14 @@ package statements
 import Config
 import Entity
 import Table
+import column
 import database
 import org.tinylog.Logger
 import sql_type_functions.SqlList
 import sql_type_functions.SqlNumber
-import utils.*
+import utils.getEntity
+import utils.ifTrue
+import utils.map
 import java.sql.ResultSet
 import kotlin.reflect.KMutableProperty1
 
@@ -18,11 +21,14 @@ data class OrderColumn(val fullColumnName: String, val isDescending: Boolean = f
 
 fun <E : Entity> Table<E>.selectAll(): SelectStatement<E> = SelectStatement(this, selectAll = true)
 fun <E : Entity> Table<E>.select(vararg props: KMutableProperty1<*, *>): SelectStatement<E> =
-    SelectStatement(this, props.map { prop -> prop.columnName })
+    SelectStatement(this, props.map { prop -> prop.column.fullName })
 
-fun <E : Entity> Table<E>.select(prop: KMutableProperty1<*, *>, function: (SqlList) -> SqlNumber): Double =
+fun <E : Entity> Table<E>.select(prop: EntityProperty<*>, function: (SqlList) -> SqlNumber): Double =
     SelectStatement(this, listOf(function(SqlList(prop.columnName)).toString()))
         .getResultSet().apply { next() }.getDouble(1)
+
+fun <E : Entity> Table<E>.select(prop: KMutableProperty1<*, *>, function: (SqlList) -> SqlNumber): Double =
+    select(EntityProperty(this, prop), function)
 
 
 class SelectStatement<E : Entity>(
@@ -61,12 +67,12 @@ class SelectStatement<E : Entity>(
     fun setLazy(lazy: Boolean) = this.apply { this.lazy = lazy }
 
     fun orderBy(vararg props: KMutableProperty1<E, *>) =
-        this.apply { orderColumns.addAll(props.map { OrderColumn(it.fullColumnName) }) }
+        this.apply { orderColumns.addAll(props.map { OrderColumn(it.column.fullName) }) }
 
     fun orderByDescending(vararg props: KMutableProperty1<E, *>) =
         this.apply {
             if (props.isEmpty()) orderColumns.add(OrderColumn(EntityProperty(table, "id"), true))
-            else orderColumns.addAll(props.map { OrderColumn(it.fullColumnName, true) })
+            else orderColumns.addAll(props.map { OrderColumn(it.column.fullName, true) })
         }
 
     fun limit(limit: Int) = this.apply { this.limit = limit }

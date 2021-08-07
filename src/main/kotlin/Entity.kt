@@ -1,5 +1,4 @@
 import statements.update
-import utils.returnValue
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
@@ -14,8 +13,8 @@ abstract class Entity {
 
     fun compareValuesWith(other: Entity): Boolean =
         properties.all { prop ->
-            prop.name == "id" || prop.returnValue(this).run {
-                if (this is Entity) id == (prop.returnValue(other) as Entity).id else this == prop.returnValue(other)
+            prop.name == "id" || prop.getter.call(this).run {
+                if (this is Entity) id == (prop.getter.call(other) as Entity).id else this == prop.getter.call(other)
             }
         }
 

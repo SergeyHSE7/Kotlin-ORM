@@ -1,5 +1,6 @@
 package utils
 
+import Column
 import Entity
 import Table
 import java.sql.ResultSet
@@ -12,7 +13,7 @@ fun <E : Entity> ResultSet.getEntity(table: Table<E>, lazy: Boolean): E {
     return entity
 }
 
-fun <E : Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>, lazy: Boolean) {
+fun <E : Entity, T> ResultSet.setProp(entity: E, column: Column<E, T>, lazy: Boolean) {
     val prop = entity.properties.firstOrNull { it.name == column.property.name }
             as? KMutableProperty1<E, T> ?: return
 
@@ -29,7 +30,7 @@ fun <E : Entity, T> ResultSet.setProp(entity: E, column: Table<E>.Column<T>, laz
 
 private operator fun Regex.contains(text: CharSequence): Boolean = this.matches(text)
 
-fun <E : Entity, T> ResultSet.getValue(column: Table<E>.Column<T>): T =
+fun <E : Entity, T> ResultSet.getValue(column: Column<E, T>): T =
     when (column.sqlType) {
         in Regex("""decimal\.*"""), in Regex("""numeric\.*""") -> getBigDecimal(column.name)
         in Regex("""varchar\(\d+\)"""), in Regex("""char\(\d+\)"""),
@@ -44,7 +45,7 @@ fun <E : Entity, T> ResultSet.getValue(column: Table<E>.Column<T>): T =
         "date" -> getDate(column.name)
         in Regex("""timestamp\.*""") -> getTimestamp(column.name)
         in Regex("""time\.*""") -> getTime(column.name)
-        else -> throw java.lang.Exception("Unknown type: ${column.property.name} - ${column.sqlType}")
+        else -> throw java.lang.Exception("Unknown type: ${column.fullName} - ${column.sqlType}")
     } as T
 
 

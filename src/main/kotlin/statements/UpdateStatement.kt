@@ -2,10 +2,9 @@ package statements
 
 import Entity
 import Table
-import utils.columnName
+import column
 import database
 import org.tinylog.Logger
-import utils.returnValue
 import kotlin.reflect.KMutableProperty1
 
 fun <E : Entity> Table<out E>.update(entity: E, props: List<KMutableProperty1<E, *>>) =
@@ -18,9 +17,9 @@ private class UpdateStatement<out E : Entity>(
     private val props: List<KMutableProperty1<E, *>> = listOf()
 ) {
     private val columnValues: MutableList<Pair<String, String>> = props.ifEmpty { entity.properties }
-        .filter { it.columnName != "id" }
+        .filter { it.column.name != "id" }
         .map { prop ->
-            prop.columnName to when (val value = prop.returnValue(entity)) {
+            prop.column.name to when (val value = prop.getter.call(entity)) {
                 is String -> "'$value'"
                 is Entity -> value.id
                 else -> value
@@ -31,7 +30,7 @@ private class UpdateStatement<out E : Entity>(
     private fun updateReferences() {
         table.columns.filter { it.refTable != null && (props.isEmpty() || props.contains(it.property)) }
             .forEach {
-                val refEntity = it.property.returnValue(entity) as Entity
+                val refEntity = it.property.getter.call(entity) as Entity
                 if (it.refTable?.get(refEntity.id) != null) it.refTable!!.update(refEntity)
                 else {
                     it.refTable?.add(refEntity)

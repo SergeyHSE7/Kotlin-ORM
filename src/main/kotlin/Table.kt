@@ -1,15 +1,17 @@
-import org.tinylog.Logger
 import statements.*
-import utils.*
+import utils.CacheMap
+import utils.Case
+import utils.ifTrue
+import utils.transformCase
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
+import kotlin.collections.set
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSupertypeOf
-import kotlin.reflect.jvm.javaType
 
 
 @Suppress("UNCHECKED_CAST")
@@ -50,8 +52,8 @@ open class Table<E : Entity>(
 ) {
     val cache = CacheMap<E>(Config.maxCacheSize)
     var tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
-    val columns = mutableListOf<Column<*>>()
-    val references = mutableListOf<Reference<*>>()
+    val columns = mutableListOf<Column<E, *>>()
+    val references = mutableListOf<Reference<E, *>>()
     val uniqueColumns = mutableSetOf<String>()
     internal val referencesAddMethods: MutableSet<() -> Unit> = mutableSetOf()
     private var defaultEntitiesMethod: () -> List<E> = { listOf() }
@@ -59,7 +61,7 @@ open class Table<E : Entity>(
     val defaultEntities by lazy { defaultEntitiesMethod() }
 
     val size: Int
-        get() = select(Entity::id) { it.count() }.toInt()
+        get() = select(EntityProperty(this, "*")) { it.count() }.toInt()
 
     fun isEmpty() = size == 0
 
@@ -100,7 +102,7 @@ open class Table<E : Entity>(
     operator fun contains(entity: E): Boolean = select().apply {
         entity.properties.forEach { prop ->
             if (prop.name != "id")
-                where { this@Table.entityProperty(prop) eq prop.returnValue(entity) }
+                where { this@Table.entityProperty(prop) eq prop.getter.call(entity) }
         }
     }.getResultSet().next()
 
@@ -149,110 +151,51 @@ open class Table<E : Entity>(
     fun none(condition: WhereCondition): Boolean = !any(condition)
 
 
-    inner class Reference<P : Entity?>(
-        property: KMutableProperty1<E, P>,
-        private val onDelete: Action
-    ) :
-        Column<P>(property, "integer") {
-
-        init {
-            if (!references.any { it.property == property }) {
-                referencesAddMethods.add { alter().addForeignKey(property, refTable!!, onDelete) }
-                references.add(this)
-            }
-        }
-    }
-
-
-    open inner class Column<T>(
-        val property: KMutableProperty1<E, T>,
-        val sqlType: String
-    ) {
-        @Suppress("UNCHECKED_CAST")
-        val refTable by lazy { get((property.returnType.javaType as Class<Entity>).kotlin) }
-        val name: String = property.columnName
-        private var defaultValue: T? = null
-        private var isNotNull = false
-        private var isUnique = false
-        private var isPrimaryKey = false
-
-        init {
-            if (!columns.any { it.property == property }) {
-                if (name in database.reservedKeyWords)
-                    throw LoggerException("\"$name\" is a reserved SQL keyword!")
-                columns.add(this)
-                if (!property.returnType.isMarkedNullable)
-                    isNotNull = true
-            }
-        }
-
-        fun notNull() = this.also {
-            isNotNull = true
-            if (property.returnType.isMarkedNullable)
-                Logger.warn { "Nullable value shouldn't be marked as not null! (column: $tableName.$name)" }
-        }
-
-        fun unique() = this.also { isUnique = true }
-        fun primaryKey() = this.also { isPrimaryKey = true }
-        fun default(value: T) = this.also { defaultValue = value }
-
-        protected open fun attributesToSql(): String = "PRIMARY KEY ".ifTrue(isPrimaryKey) +
-                "NOT NULL ".ifTrue(isNotNull) +
-                "UNIQUE ".ifTrue(isUnique) +
-                "DEFAULT $defaultValue".ifTrue(defaultValue != null && defaultValue !is String) +
-                "DEFAULT '$defaultValue'".ifTrue(defaultValue != null && defaultValue is String)
-
-
-        fun toSql(nameLength: Int = name.length): String =
-            "${name.padEnd(nameLength)} ${sqlType.uppercase()} ${attributesToSql()}".trim()
-    }
-
     inner class CreateMethods {
         fun defaultEntities(entities: () -> List<E>) {
             defaultEntitiesMethod = entities
         }
 
-        fun <T : Int?> serial(prop: KMutableProperty1<E, T>) = Column(prop, "serial")
+        fun <T : Int?> serial(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "serial")
 
         fun <T : BigDecimal?> decimal(prop: KMutableProperty1<E, T>, precision: Int, scale: Int) =
-            Column(prop, "decimal($precision, $scale)")
+            Column(this@Table, prop, "decimal($precision, $scale)")
 
         fun <T : BigDecimal?> numeric(prop: KMutableProperty1<E, T>, precision: Int, scale: Int) =
-            Column(prop, "numeric($precision, $scale)")
+            Column(this@Table, prop, "numeric($precision, $scale)")
 
-        fun <T : Long?> bigint(prop: KMutableProperty1<E, T>) = Column(prop, "bigint")
-        fun <T : Int?> int(prop: KMutableProperty1<E, T>) = Column(prop, "integer")
-        fun <T : Short?> smallint(prop: KMutableProperty1<E, T>) = Column(prop, "smallint")
-        fun <T : UByte?> tinyint(prop: KMutableProperty1<E, T>) = Column(prop, "tinyint")
+        fun <T : Long?> bigint(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "bigint")
+        fun <T : Int?> int(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "integer")
+        fun <T : Short?> smallint(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "smallint")
+        fun <T : UByte?> tinyint(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "tinyint")
 
-        fun <T : Boolean?> bool(prop: KMutableProperty1<E, T>) = Column(prop, "boolean")
+        fun <T : Boolean?> bool(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "boolean")
 
-        fun <T : Double?> double(prop: KMutableProperty1<E, T>) = Column(prop, "double precision")
-        fun <T : Float?> real(prop: KMutableProperty1<E, T>) = Column(prop, "real")
+        fun <T : Double?> double(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "double precision")
+        fun <T : Float?> real(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "real")
 
-        fun <T : String?> varchar(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(prop, "varchar($size)")
-        fun <T : String?> char(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(prop, "char($size)")
-        fun <T : String?> text(prop: KMutableProperty1<E, T>) = Column(prop, "text")
+        fun <T : String?> varchar(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(this@Table, prop, "varchar($size)")
+        fun <T : String?> char(prop: KMutableProperty1<E, T>, size: Int = 60) = Column(this@Table, prop, "char($size)")
+        fun <T : String?> text(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "text")
 
-        fun <T : String?> json(prop: KMutableProperty1<E, T>) = Column(prop, "json")
-        fun <T : String?> uuid(prop: KMutableProperty1<E, T>) = Column(prop, "uuid")
+        fun <T : String?> json(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "json")
+        fun <T : String?> uuid(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "uuid")
 
 
-        fun <T : Date?> date(prop: KMutableProperty1<E, T>) = Column(prop, "date")
+        fun <T : Date?> date(prop: KMutableProperty1<E, T>) = Column(this@Table, prop, "date")
         fun <T : Time?> time(prop: KMutableProperty1<E, T>, withTimeZone: Boolean = false) =
-            Column(prop, "time" + " with time zone".ifTrue(withTimeZone))
+            Column(this@Table, prop, "time" + " with time zone".ifTrue(withTimeZone))
 
         fun <T : Timestamp?> timestamp(prop: KMutableProperty1<E, T>, withTimeZone: Boolean = false) =
-            Column(prop, "timestamp" + " with time zone".ifTrue(withTimeZone))
+            Column(this@Table, prop, "timestamp" + " with time zone".ifTrue(withTimeZone))
 
 
         fun <T : Entity> reference(prop: KMutableProperty1<E, T?>, onDelete: Action = Action.SetDefault) =
-            @Suppress("UNCHECKED_CAST")
-            Reference(prop, onDelete)
+            Reference(this@Table, prop, onDelete)
 
 
         fun uniqueColumns(vararg props: KMutableProperty1<E, *>) {
-            uniqueColumns.addAll(props.map { it.columnName })
+            uniqueColumns.addAll(props.map { it.column.name })
         }
     }
 

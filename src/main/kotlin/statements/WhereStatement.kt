@@ -2,18 +2,17 @@ package statements
 
 import Entity
 import Table
+import column
 import sql_type_functions.SqlNumber
 import sql_type_functions.SqlString
-import utils.columnName
-import utils.fullColumnName
 import kotlin.reflect.KMutableProperty1
 
 typealias WhereCondition = WhereStatement.() -> String
 
-class EntityProperty<T : Entity>(table: Table<T>, columnName: String) {
+class EntityProperty<T : Entity>(table: Table<T>, val columnName: String) {
     val fullColumnName = "${table.tableName}.$columnName"
 
-    constructor(table: Table<T>, prop: KMutableProperty1<*, *>) : this(table, prop.columnName)
+    constructor(table: Table<T>, prop: KMutableProperty1<*, *>) : this(table, prop.column.name)
 }
 
 class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
@@ -76,18 +75,18 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
         is Entity -> id.toString()
         is EntityProperty<*> -> fullColumnName
         is List<Any?> -> joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
-        is KMutableProperty1<*, *> -> fullColumnName
+        is KMutableProperty1<*, *> -> column.fullName
         else -> this.toString()
     }
 
 
     val <S : String?, T : KMutableProperty1<*, S>> T.sqlString
-        get() = SqlString(fullColumnName)
+        get() = SqlString(column.fullName)
 
     val <N : Number?, T : KMutableProperty1<*, N>> T.sqlInt
-        get() = SqlNumber(fullColumnName)
+        get() = SqlNumber(column.fullName)
 
     val <N : Number?, T : KMutableProperty1<*, List<N>>> T.sqlList
-        get() = SqlNumber(fullColumnName)
+        get() = SqlNumber(column.fullName)
 
 }

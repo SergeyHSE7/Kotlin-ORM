@@ -3,10 +3,10 @@ package statements
 import Action
 import Entity
 import Table
+import column
 import database
 import org.tinylog.Logger
 import utils.Case
-import utils.columnName
 import utils.transformCase
 import kotlin.reflect.KMutableProperty1
 
@@ -22,7 +22,7 @@ class AlterStatement<E : Entity>(private val table: Table<E>) {
     ) {
         database.executeSql(
             ("ALTER TABLE IF EXISTS ${table.tableName} ADD " +
-                    "FOREIGN KEY (${property.columnName}) REFERENCES ${refTable.tableName}(id) " +
+                    "FOREIGN KEY (${property.column.name}) REFERENCES ${refTable.tableName}(id) " +
                     "ON DELETE ${onDelete.name.transformCase(Case.Pascal, Case.Normal).uppercase()}")
                 .apply { Logger.tag("ALTER").info { this } }
         )

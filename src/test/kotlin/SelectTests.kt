@@ -17,7 +17,7 @@ class SelectTests : FreeSpec({
         UsersTable[100] shouldBe null
     }
 
-    "WHERE check" {
+    "WHERE" {
         UsersTable.getAll { User::enabled eq true }.all { it.enabled } shouldBe true
         UsersTable.findIdOf { User::username eq "Marco" } shouldBe 2
         UsersTable.first { (User::enabled eq false) and (User::username startsWith "S") }?.username shouldBe "Simon"

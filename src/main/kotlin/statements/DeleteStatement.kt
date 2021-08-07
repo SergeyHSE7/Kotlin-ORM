@@ -9,7 +9,7 @@ fun <E : Entity> Table<E>.delete(condition: WhereCondition? = null) =
     DeleteStatement(this).where(condition).execute().also { cache.clear() }
 
 fun <E : Entity> Table<E>.deleteById(id: Int) =
-    DeleteStatement(this).where { Entity::id eq id }.execute()
+    DeleteStatement(this).where { entityProperty("id") eq id }.execute()
         .also { cache.remove(id) }
 
 
