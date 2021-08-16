@@ -1,6 +1,7 @@
 package entities
 
 import Entity
+import databases.PostgreSql
 import kotlinx.serialization.Serializable
 import table
 
@@ -13,9 +14,10 @@ data class Address(
     val users: List<User?> by oneToMany(User::address)
 }
 
-val AddressesTable = table<Address> {
+val AddressesTable = table<Address, PostgreSql> {
     varchar(Address::country, 30)
     varchar(Address::city, 30)
+
     defaultEntities { listOf(
         Address(country = "USA", city = "New York"),
         Address(country = "France", city = "Paris"),

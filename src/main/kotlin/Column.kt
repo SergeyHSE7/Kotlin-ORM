@@ -1,8 +1,6 @@
 import org.tinylog.Logger
 import statements.alter
-import utils.Case
-import utils.ifTrue
-import utils.transformCase
+import utils.*
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.jvm.javaType
 
@@ -14,7 +12,7 @@ class Reference<E : Entity, P : Entity?>(
     property: KMutableProperty1<E, P>,
     private val onDelete: Action
 ) :
-    Column<E, P>(table, property, "integer") {
+    Column<E, P>(table, property, database.columnTypesMap[int4Type]!!) {
 
     init {
         with(table) {
@@ -26,10 +24,25 @@ class Reference<E : Entity, P : Entity?>(
     }
 }
 
+inline fun <reified E : Entity> column(prop: KMutableProperty1<E, *>, sqlType: String) = Column(Table(), prop, sqlType)
+
+inline fun <reified E : Entity> autoColumn(prop: KMutableProperty1<E, *>): Column<E, *> {
+    @Suppress("UNCHECKED_CAST")
+    if (prop.name == "id") return database.idColumn(Table(), prop as KMutableProperty1<E, Int>)
+
+    val sqlType: String? = database.columnTypesMap[prop.type]
+
+    return if (sqlType != null) column(prop, sqlType)
+    else
+        @Suppress("UNCHECKED_CAST")
+        Reference(Table(), prop as KMutableProperty1<E, Entity?>, Action.SetDefault)
+}
+
+
 open class Column<E : Entity, T>(
     table: Table<E>,
     val property: KMutableProperty1<E, T>,
-    val sqlType: String
+    private val sqlType: String
 ) {
     @Suppress("UNCHECKED_CAST")
     val refTable by lazy { Table[(property.returnType.javaType as Class<Entity>).kotlin] }

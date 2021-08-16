@@ -1,6 +1,7 @@
 package entities
 
 import Entity
+import databases.PostgreSql
 import kotlinx.serialization.Serializable
 import table
 
@@ -13,11 +14,11 @@ data class Book(
     var isbn: Int = 0
 ) : Entity()
 
-val BooksTable = table<Book> {
+val BooksTable = table<Book, PostgreSql> {
     varchar(Book::title, 100)
     varchar(Book::author, 100)
-    int(Book::publishedYear)
-    int(Book::isbn).unique()
+    int4(Book::publishedYear)
+    int4(Book::isbn).unique()
 
     defaultEntities { listOf(
         Book(title = "1984", author = "George Orwell", isbn = 123456, publishedYear = 1949),

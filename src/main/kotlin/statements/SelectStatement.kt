@@ -54,8 +54,6 @@ class SelectStatement<E : Entity>(
     private var whereStatement: WhereStatement = WhereStatement()
 
     fun where(conditionBody: WhereCondition?) = this.apply { whereStatement.addCondition(conditionBody) }
-//    fun where(vararg values: Pair<KMutableProperty1<E, *>, Any?>) =
-//        this.apply { values.forEach { where { it.first eq it.second } } }
 
     fun innerJoin(joinTable: Table<*>, condition: WhereCondition) =
         this.apply { joinTables.add(JoinTable(JoinType.Inner, joinTable, condition)) }
@@ -96,8 +94,8 @@ class SelectStatement<E : Entity>(
         }
 
     fun getSql(): String =
-        "SELECT ${if (selectAll) "*" else columns.joinToString { it }} " +
-                "FROM ${table.tableName}" +
+        "SELECT" + (if (selectAll) " *" else if (columns.size > 0) columns.joinToString(prefix = " ") else "") +
+                " FROM ${table.tableName}" +
                 joinTables.joinToString("") +
                 whereStatement.getSql() +
                 (" ORDER BY " + orderColumns.joinToString { it.fullColumnName + if (it.isDescending) " DESC" else " ASC" })

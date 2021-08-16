@@ -1,6 +1,7 @@
 package entities
 
 import Entity
+import databases.PostgreSql
 import kotlinx.serialization.Serializable
 import table
 
@@ -12,9 +13,9 @@ data class Test(
 ) : Entity()
 
 
-val TestTable = table<Test> {
+val TestTable = table<Test, PostgreSql> {
     varchar(Test::string).unique()
-    int(Test::int)
+    int4(Test::int)
 
     defaultEntities {
         listOf(

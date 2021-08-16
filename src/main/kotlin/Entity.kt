@@ -32,12 +32,15 @@ abstract class Entity {
         }
 }
 
+@Suppress("UNCHECKED_CAST")
 fun <E : Entity> E.loadReferences(): E? = table.findById(id, loadReferences = true) as E?
 internal fun <E : Entity?> E.loadReferencesIf(condition: Boolean): E? =
     if (condition && this != null) this.loadReferences() else this
 
+@Suppress("UNCHECKED_CAST")
 fun <E : Entity> E.save(): E? = table.add(this) as E?
 
+@Suppress("UNCHECKED_CAST")
 fun <E : Entity> List<E>.save(): List<E> = firstOrNull()?.let { it.table.add(this) as List<E> } ?: listOf()
 
 inline fun <reified E : Entity> E.update(vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {

@@ -3,6 +3,7 @@ package entities
 import Action
 import Entity
 import autoTable
+import databases.PostgreSql
 import java.sql.Date
 
 data class UserBook(
@@ -14,7 +15,7 @@ data class UserBook(
 ) : Entity()
 
 
-val UserBooksTable = autoTable<UserBook> {
+val UserBooksTable = autoTable<UserBook, PostgreSql> {
     reference(UserBook::borrower, Action.Cascade)
     reference(UserBook::book, Action.Cascade)
 

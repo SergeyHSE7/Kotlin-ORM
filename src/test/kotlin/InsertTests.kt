@@ -1,3 +1,4 @@
+import databases.PostgreSql
 import entities.*
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -6,7 +7,7 @@ class InsertTests : FreeSpec({
     config {
         tables = { listOf(UserBooksTable, UsersTable, AddressesTable, BooksTable, TestTable) }
         refreshTables = true
-        database = Database(
+        database = PostgreSql(
             url = "jdbc:postgresql://localhost:5432/FinAssistant",
             user = "postgres",
             password = "123456"
