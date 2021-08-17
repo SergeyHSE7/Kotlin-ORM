@@ -1,33 +1,34 @@
 import entities.Address
-import entities.AddressesTable
 import entities.User
-import entities.UsersTable
-import io.kotest.core.spec.style.FreeSpec
+import io.kotest.core.spec.style.scopes.FreeSpecContainerContext
 import io.kotest.matchers.shouldBe
 
-class UpdateTests : FreeSpec({
+suspend inline fun FreeSpecContainerContext.updateTests() {
+    val usersTable = Table<User>()
+    val addressesTable = Table<Address>()
+
     "UPDATE" {
-        val address = AddressesTable[1]!!
+        val address = addressesTable[1]!!
         address.city = "Chicago"
-        AddressesTable.update(address, Address::city)
-        AddressesTable[1]!!.city shouldBe "Chicago"
+        addressesTable.update(address, Address::city)
+        addressesTable[1]!!.city shouldBe "Chicago"
     }
     "Should update references" {
-        val user = UsersTable[2]!!
+        val user = usersTable[2]!!
         user.update {
             username = "Josef"
-            address = AddressesTable[1]!!.copy(city = "Los Angeles")
+            address = addressesTable[1]!!.copy(city = "Los Angeles")
         }
-        println(UsersTable[2]!!)
+        println(usersTable[2]!!)
         println(user)
-        UsersTable[2]!!.compareValuesWith(user) shouldBe true
-        AddressesTable[1]!!.city shouldBe "Los Angeles"
+        usersTable[2]!!.compareValuesWith(user) shouldBe true
+        addressesTable[1]!!.city shouldBe "Los Angeles"
     }
     "Should create non-existent entities (references)" {
-        val user = UsersTable[2]!!
+        val user = usersTable[2]!!
         user.address = Address(country = "Germany", city = "Berlin")
-        UsersTable.update(user, User::address)
+        usersTable.update(user, User::address)
 
-        UsersTable[2]!!.address?.compareValuesWith(user.address!!) shouldBe true
+        usersTable[2]!!.address?.compareValuesWith(user.address!!) shouldBe true
     }
-})
+}

@@ -2,9 +2,9 @@ import databases.Database
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonBuilder
 
-val database: Database by lazy {
-    Config.database ?: throw LoggerException("First you need to set database property in config method!")
-}
+
+val database: Database
+    get() = Config.database ?: throw LoggerException("First you need to set database property in config method!")
 
 val json: Json by lazy { Json(builderAction = Config.jsonFormat) }
 

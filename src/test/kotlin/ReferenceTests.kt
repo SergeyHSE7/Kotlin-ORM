@@ -1,27 +1,27 @@
-import entities.AddressesTable
-import entities.UserBooksTable
-import entities.UsersTable
-import io.kotest.core.spec.style.FreeSpec
+import entities.Address
+import entities.User
+import entities.UserBook
+import io.kotest.core.spec.style.scopes.FreeSpecContainerContext
 import io.kotest.matchers.shouldBe
 
-class ReferenceTests : FreeSpec({
+suspend inline fun FreeSpecContainerContext.referenceTests() {
     "One To Many" {
-        val users = AddressesTable[5]!!.users
+        val users = Table<Address>()[5]!!.users
         users.size shouldBe 2
         users.forEach(::println)
     }
 
     "Many To Many" {
-        val books = UsersTable[1]!!.books
+        val books = Table<User>()[1]!!.books
         books.size shouldBe 2
         books.forEach(::println)
     }
 
     "Cascade delete reference" {
-        val user = UsersTable[5]!!
-        val userBooksSize = UserBooksTable.size
+        val user = Table<User>()[5]!!
+        val userBooksSize = Table<UserBook>().size
         user.delete()
-        UserBooksTable.size shouldBe userBooksSize - 1
+        Table<UserBook>().size shouldBe userBooksSize - 1
         user.save()
     }
-})
+}

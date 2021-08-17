@@ -40,7 +40,7 @@ class PostgreSql(
         Column(table, prop, "serial").primaryKey()
 
 
-    inline fun <reified E : Entity, T : UByte?> int1(prop: KMutableProperty1<E, T>) = autoColumn(prop)
+    inline fun <reified E : Entity, T : UByte?> byte(prop: KMutableProperty1<E, T>) = autoColumn(prop)
 
     inline fun <reified E : Entity, T : Float?> float(prop: KMutableProperty1<E, T>) = autoColumn(prop)
 

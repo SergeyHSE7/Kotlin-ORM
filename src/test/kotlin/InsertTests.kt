@@ -1,30 +1,17 @@
-import databases.PostgreSql
-import entities.*
-import io.kotest.core.spec.style.FreeSpec
+import entities.Test
+import io.kotest.core.spec.style.scopes.FreeSpecContainerContext
 import io.kotest.matchers.shouldBe
 
-class InsertTests : FreeSpec({
-    config {
-        tables = { listOf(UserBooksTable, UsersTable, AddressesTable, BooksTable, TestTable) }
-        refreshTables = true
-        database = PostgreSql(
-            url = "jdbc:postgresql://localhost:5432/FinAssistant",
-            user = "postgres",
-            password = "123456"
-        )
-        jsonFormat = {
-            encodeDefaults = true
-            prettyPrint = true
-        }
-    }
+suspend inline fun FreeSpecContainerContext.insertTests() {
+
     val newEntity = Test(string = "unknown", int = 5)
 
     "INSERT check" {
-        (newEntity in TestTable) shouldBe false
+        (newEntity in Table<Test>()) shouldBe false
 
         newEntity.save()
 
-        (newEntity in TestTable) shouldBe true
+        (newEntity in Table<Test>()) shouldBe true
     }
     "Shouldn't duplicate objects with unique values" {
         newEntity.save() shouldBe null
@@ -32,4 +19,4 @@ class InsertTests : FreeSpec({
         // TestTable -= newEntity
         newEntity.delete()
     }
-})
+}

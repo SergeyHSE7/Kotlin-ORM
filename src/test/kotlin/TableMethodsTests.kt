@@ -1,50 +1,50 @@
 import entities.Address
 import entities.User
-import entities.UsersTable
-import io.kotest.core.spec.style.FreeSpec
+import io.kotest.core.spec.style.scopes.FreeSpecContainerContext
 import io.kotest.matchers.shouldBe
 
-class TableMethodsTests: FreeSpec({
-    val defaultUsers = UsersTable.defaultEntities
+suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
+    val usersTable = Table<User>()
+    val defaultUsers = usersTable.defaultEntities
 
     "get" {
-        UsersTable[1]!!.compareValuesWith(defaultUsers[0]) shouldBe true
+        usersTable[1]!!.compareValuesWith(defaultUsers[0]) shouldBe true
     }
 
     "size" {
-        UsersTable.size shouldBe defaultUsers.size
+        usersTable.size shouldBe defaultUsers.size
     }
 
     "count" {
-        UsersTable.count { User::address eq Address(5) } shouldBe 2
-        UsersTable.count { (User::address eq 5) and (User::age eq 42) } shouldBe 1
-        UsersTable.count { (User::address eq 5) and (User::age eq 43) and (User::enabled eq false) } shouldBe 0
+        usersTable.count { User::address eq Address(5) } shouldBe 2
+        usersTable.count { (User::address eq 5) and (User::age eq 42) } shouldBe 1
+        usersTable.count { (User::address eq 5) and (User::age eq 43) and (User::enabled eq false) } shouldBe 0
     }
 
     "first/last" {
-        UsersTable.first()!!.compareValuesWith(defaultUsers.first()) shouldBe true
-        UsersTable.last()!!.compareValuesWith(UsersTable.getAll().last()) shouldBe true
-        UsersTable.last { User::address eq 5 }!!.username shouldBe "Alex"
+        usersTable.first()!!.compareValuesWith(defaultUsers.first()) shouldBe true
+        usersTable.last()!!.compareValuesWith(usersTable.getAll().last()) shouldBe true
+        usersTable.last { User::address eq 5 }!!.username shouldBe "Alex"
     }
 
     "contains" {
-        (defaultUsers[2] in UsersTable) shouldBe true
-        (defaultUsers in UsersTable) shouldBe true
-        (User(username = "Anonymous") in UsersTable) shouldBe false
+        (defaultUsers[2] in usersTable) shouldBe true
+        (defaultUsers in usersTable) shouldBe true
+        (User(username = "Anonymous") in usersTable) shouldBe false
     }
 
     "all/any/none check" {
-        UsersTable.all { User::age greater 10 } shouldBe true
-        UsersTable.all { User::age greater 50 } shouldBe false
+        usersTable.all { User::age greater 10 } shouldBe true
+        usersTable.all { User::age greater 50 } shouldBe false
 
-        UsersTable.any { User::age greater 50 } shouldBe true
-        UsersTable.any { User::age greater 150 } shouldBe false
+        usersTable.any { User::age greater 50 } shouldBe true
+        usersTable.any { User::age greater 150 } shouldBe false
 
-        UsersTable.none { User::age greater 150 } shouldBe true
-        UsersTable.none { User::age greater 50 } shouldBe false
+        usersTable.none { User::age greater 150 } shouldBe true
+        usersTable.none { User::age greater 50 } shouldBe false
     }
 
     "getValuesOfColumn" {
-        UsersTable.getValuesOfColumn(User::username) shouldBe UsersTable.getAll().map { it.username }
+        usersTable.getValuesOfColumn(User::username) shouldBe usersTable.getAll().map { it.username }
     }
-})
+}

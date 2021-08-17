@@ -1,5 +1,6 @@
 package utils
 
+import LoggerException
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.PreparedStatement
@@ -21,5 +22,6 @@ fun PreparedStatement.set(index: Int, value: Any?) = when (value) {
     is Date -> setDate(index, value)
     is Time -> setTime(index, value)
     is Timestamp -> setTimestamp(index, value)
-    else -> setNull(index, 4)
+    null -> setNull(index, 4)
+    else -> throw LoggerException("Unknown type: $value")
 }

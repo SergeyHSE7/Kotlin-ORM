@@ -2,6 +2,7 @@ package utils
 
 import Column
 import Entity
+import LoggerException
 import Table
 import java.sql.ResultSet
 import kotlin.reflect.full.createInstance
@@ -31,11 +32,12 @@ private operator fun Regex.contains(text: CharSequence): Boolean = this.matches(
 
 @Suppress("UNCHECKED_CAST")
 fun <E : Entity, T> ResultSet.getValue(column: Column<E, T>): T =
-    when (column.property.type) {
+    if (column.refTable != null) getInt(column.name) as T
+    else when (column.property.type) {
         decimalType -> getBigDecimal(column.name)
         stringType -> getString(column.name)
         int8Type -> getLong(column.name)
-        int4Type, null -> getInt(column.name)
+        int4Type -> getInt(column.name)
         int2Type -> getShort(column.name)
         int1Type -> getShort(column.name).toUByte()
         doubleType -> getDouble(column.name)
@@ -44,7 +46,7 @@ fun <E : Entity, T> ResultSet.getValue(column: Column<E, T>): T =
         dateType -> getDate(column.name)
         timestampType -> getTimestamp(column.name)
         timeType -> getTime(column.name)
-        else -> throw java.lang.Exception("Unknown type: ${column.fullName} - ${column.property.type}")
+        else -> throw LoggerException("Unknown type: ${column.fullName} - ${column.property.type}")
     } as T
 
 

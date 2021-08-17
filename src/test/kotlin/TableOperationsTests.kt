@@ -1,25 +1,26 @@
 import entities.Test
-import entities.TestTable
-import io.kotest.assertions.throwables.shouldThrowExactly
-import io.kotest.core.spec.style.FreeSpec
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.scopes.FreeSpecContainerContext
 import io.kotest.matchers.shouldBe
-import org.postgresql.util.PSQLException
+import java.sql.SQLException
 
 
-class TableOperationsTests : FreeSpec({
+suspend inline fun FreeSpecContainerContext.tableOperationsTests() {
+    val testTable = Table<Test>()
+
     "Create table" {
-        TestTable.tableName shouldBe "tests"
-        TestTable.columns.size shouldBe Test().properties.size
-        TestTable.size shouldBe TestTable.defaultEntities.size
+        testTable.tableName shouldBe "tests"
+        testTable.size shouldBe testTable.defaultEntities.size
     }
     "Clear table" {
-        TestTable.clearTable()
-        TestTable.size shouldBe 0
+        testTable.clearTable()
+        testTable.size shouldBe 0
     }
     "Drop table" {
-        TestTable.dropTable()
-        shouldThrowExactly<PSQLException> {
-            TestTable.getAll()
+        testTable.dropTable()
+        shouldThrow<SQLException> {
+            testTable.getAll()
         }
     }
-})
+
+}
