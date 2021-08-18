@@ -1,4 +1,5 @@
 import databases.Database
+import databases.SQLite
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonBuilder
 
@@ -16,6 +17,7 @@ fun config(func: Config.() -> Unit): Unit = Config.apply(func).run {
         forEach { it.defaultEntities.save() }
         forEach { it.referencesAddMethods.forEach { it() } }
     }
+    if (database is SQLite) database!!.executeSql("PRAGMA foreign_keys = ON")
     alwaysLoadReferencesWhenAddingEntity = loadRefs
 }
 

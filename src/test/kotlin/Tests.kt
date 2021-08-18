@@ -1,24 +1,26 @@
-import databases.Database
 import databases.PostgreSQL
 import databases.SQLite
 import entities.*
 import io.kotest.core.spec.style.FreeSpec
 
 class Tests : FreeSpec({
-    val databases = mapOf<Database, () -> List<Table<*>>>(
+    val tables = {
+        listOf(
+            UserBooksTable,
+            UsersTable,
+            AddressesTable,
+            BooksTable,
+            TestTable
+        )
+    }
+
+    val databases = listOf(
         PostgreSQL(
             url = "jdbc:postgresql://localhost:5432/FinAssistant",
             user = "postgres",
             password = "123456"
-        ) to {
-            listOf(
-                UserBooksTablePostgreSQL,
-                UsersTablePostgreSQL,
-                AddressesTablePostgreSQL,
-                BooksTablePostgreSQL,
-                TestTable
-            )
-        },
+        ),
+        SQLite(url = "jdbc:sqlite:C:\\SQLite3\\test_db.sqlite"),
     )
 
     config {
@@ -30,10 +32,7 @@ class Tests : FreeSpec({
 
     include(utilsTests())
 
-    val db = SQLite("jdbc:sqlite:C:\\SQLite3\\test_db.sqlite")
-    db.executeSql("CREATE TABLE test_table(id INTEGER)")
-
-    databases.forEach { (database, tables) ->
+    databases.forEach { database ->
         "${database::class.simpleName} Tests" - {
             "Generate tables" {
                 config {

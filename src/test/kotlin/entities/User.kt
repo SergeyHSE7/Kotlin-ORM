@@ -2,8 +2,7 @@ package entities
 
 import Action
 import Entity
-import databases.PostgreSQL
-import databases.SQLite
+import databases.Database
 import kotlinx.serialization.Serializable
 import table
 
@@ -27,16 +26,8 @@ private val defaultEntities = { listOf(
         User(username = "Simon", address = Address(4), enabled = false, age = 34),
     )}
 
-val UsersTablePostgreSQL = table<User, PostgreSQL> {
-    varchar(User::username, 25)
+val UsersTable = table<User, Database> {
     reference(User::address, Action.SetNull)
 
     defaultEntities(defaultEntities)
 }
-
-val UsersTableSQLite = table<User, SQLite> {
-    reference(User::address, Action.SetNull)
-
-    defaultEntities(defaultEntities)
-}
-

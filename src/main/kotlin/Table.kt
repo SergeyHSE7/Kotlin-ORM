@@ -9,7 +9,7 @@ import kotlin.reflect.KMutableProperty1
 
 
 @Suppress("UNCHECKED_CAST")
-inline fun <reified E : Entity, DB: Database> table(noinline columnsBody: DB.() -> Unit): Table<E> =
+inline fun <reified E : Entity, DB : Database> table(noinline columnsBody: DB.() -> Unit): Table<E> =
     Table(E::class, columnsBody as Database.() -> Unit)
 
 
@@ -51,7 +51,15 @@ class Table<E : Entity>(
         create()
     }
 
-    fun dropTable() = drop().also { tables.remove(entityClass) }
+    fun dropTable() = drop().also {
+        tables.remove(entityClass)
+        columns.clear()
+        uniqueColumns.clear()
+        references.clear()
+        referencesAddMethods.clear()
+        cache.clear()
+    }
+
     fun clearTable() = delete()
 
 

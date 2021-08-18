@@ -5,6 +5,8 @@ import Entity
 import Table
 import column
 import database
+import databases.PostgreSQL
+import databases.SQLite
 import org.tinylog.Logger
 import sql_type_functions.SqlList
 import sql_type_functions.SqlNumber
@@ -94,14 +96,20 @@ class SelectStatement<E : Entity>(
         }
 
     fun getSql(): String =
-        "SELECT" + (if (selectAll) " *" else if (columns.size > 0) columns.joinToString(prefix = " ") else "") +
+        "SELECT" + (if (selectAll) " *" else if (columns.size > 0) columns.joinToString(prefix = " ") else " id") +
                 " FROM ${table.tableName}" +
                 joinTables.joinToString("") +
                 whereStatement.getSql() +
                 (" ORDER BY " + orderColumns.joinToString { it.fullColumnName + if (it.isDescending) " DESC" else " ASC" })
                     .ifTrue(orderColumns.isNotEmpty()) +
-                " LIMIT $limit".ifTrue(limit != null) +
-                " OFFSET $offset".ifTrue(offset != null)
+                when (database) {
+                    is PostgreSQL ->
+                        " LIMIT $limit".ifTrue(limit != null) + " OFFSET $offset".ifTrue(offset != null)
+                    is SQLite ->
+                        if (offset != null) " LIMIT ${limit ?: -1} OFFSET $offset"
+                        else " LIMIT $limit".ifTrue(limit != null)
+                }
+
 
 }
 

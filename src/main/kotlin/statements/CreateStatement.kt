@@ -3,6 +3,7 @@ package statements
 import Entity
 import Table
 import database
+import databases.SQLite
 import org.tinylog.Logger
 import utils.ifTrue
 
@@ -17,6 +18,8 @@ private class CreateStatement<in E : Entity>(private val table: Table<E>) {
                 table.columns.joinToString(",\n") {
                     "\t" + it.toSql(maxLength)
                 } +
+                table.references.joinToString(",\n\t", prefix = ",\n\t") { it.getForeignKey() }
+                    .ifTrue(database is SQLite && table.references.isNotEmpty()) +
                 ",\nCONSTRAINT unique_columns UNIQUE (${table.uniqueColumns.joinToString()})"
                     .ifTrue(table.uniqueColumns.isNotEmpty()) +
                 "\n)"

@@ -1,8 +1,7 @@
 package entities
 
 import Entity
-import databases.PostgreSQL
-import databases.SQLite
+import databases.Database
 import kotlinx.serialization.Serializable
 import table
 
@@ -23,13 +22,6 @@ private val defaultEntities = { listOf(
     Address(country = "Russia", city = "Moscow"),
 )}
 
-val AddressesTablePostgreSQL = table<Address, PostgreSQL> {
-    varchar(Address::country, 30)
-    varchar(Address::city, 30)
-
-    defaultEntities(defaultEntities)
-}
-
-val AddressesTableSQLite = table<Address, SQLite> {
+val AddressesTable = table<Address, Database> {
     defaultEntities(defaultEntities)
 }

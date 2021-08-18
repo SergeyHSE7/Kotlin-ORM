@@ -4,6 +4,7 @@ import Column
 import Entity
 import Table
 import utils.*
+import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
@@ -175,9 +176,18 @@ class SQLite(
         floatType to SqlType<Float>("real"),
         doubleType to SqlType<Double>("real"),
         stringType to SqlType<String>("text"),
-        dateType to SqlType<Date>("text"),
-        timeType to SqlType<Time>("text"),
-        timestampType to SqlType<Timestamp>("text"),
+        dateType to SqlType<Date>("text",
+            customGetValue = { rs, name -> Date.valueOf(rs.getString(name)) },
+            customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
+        timeType to SqlType<Time>("text",
+            customGetValue = { rs, name -> Time.valueOf(rs.getString(name)) },
+            customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
+        timestampType to SqlType<Timestamp>("text",
+            customGetValue = { rs, name -> Timestamp.valueOf(rs.getString(name)) },
+            customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
+        decimalType to SqlType("text",
+            customGetValue = { rs, name -> BigDecimal(rs.getString(name)) },
+            customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
     )
 
     override fun <E : Entity> idColumn(table: Table<E>, prop: KMutableProperty1<E, Int>): Column<E, Int> =

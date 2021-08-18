@@ -2,8 +2,7 @@ package entities
 
 import Action
 import Entity
-import databases.PostgreSQL
-import databases.SQLite
+import databases.Database
 import table
 import java.sql.Date
 
@@ -44,14 +43,7 @@ private val defaultEntities = {
     )
 }
 
-val UserBooksTablePostgreSQL = table<UserBook, PostgreSQL> {
-    reference(UserBook::borrower, Action.Cascade)
-    reference(UserBook::book, Action.Cascade)
-
-    defaultEntities(defaultEntities)
-}
-
-val UserBooksTableSQLite = table<UserBook, SQLite> {
+val UserBooksTable = table<UserBook, Database> {
     reference(UserBook::borrower, Action.Cascade)
     reference(UserBook::book, Action.Cascade)
 

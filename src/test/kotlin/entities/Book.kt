@@ -2,8 +2,7 @@ package entities
 
 import Entity
 import column
-import databases.PostgreSQL
-import databases.SQLite
+import databases.Database
 import kotlinx.serialization.Serializable
 import table
 
@@ -24,15 +23,7 @@ private val defaultEntities = { listOf(
     Book(title = "White Fang", author = "Jack London", isbn = 123456, publishedYear = 1906),
 )}
 
-val BooksTablePostgreSQL = table<Book, PostgreSQL> {
-    varchar(Book::title, 100)
-    varchar(Book::author, 100)
-    column(Book::isbn).unique()
-
-    defaultEntities(defaultEntities)
-}
-
-val BooksTableSQLite = table<Book, SQLite> {
+val BooksTable = table<Book, Database> {
     column(Book::isbn).unique()
 
     defaultEntities(defaultEntities)

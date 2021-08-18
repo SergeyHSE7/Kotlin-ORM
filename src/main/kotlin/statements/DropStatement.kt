@@ -10,7 +10,8 @@ fun <E : Entity> Table<E>.drop() = DropStatement(this).execute().also { cache.cl
 private class DropStatement<in E : Entity>(private val table: Table<E>) {
 
     fun getSql(): String =
-        "DROP TABLE IF EXISTS ${table.tableName} CASCADE"
+        "DROP TABLE IF EXISTS ${table.tableName}"
 
-    fun execute() = database.executeSql(getSql().also { Logger.tag("DROP").info { it } })
+    fun execute() = database.apply { closeAllStatements() }
+        .executeSql(getSql().also { Logger.tag("DROP").info { it } })
 }
