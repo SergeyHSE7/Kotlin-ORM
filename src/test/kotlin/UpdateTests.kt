@@ -7,7 +7,7 @@ suspend inline fun FreeSpecContainerContext.updateTests() {
     val usersTable = Table<User>()
     val addressesTable = Table<Address>()
 
-    "UPDATE" {
+    "check" {
         val address = addressesTable[1]!!
         address.city = "Chicago"
         addressesTable.update(address, Address::city)

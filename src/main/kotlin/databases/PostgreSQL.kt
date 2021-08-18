@@ -13,7 +13,7 @@ import java.sql.Timestamp
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 
-class PostgreSql(
+class PostgreSQL(
     url: String,
     user: String,
     password: String,
@@ -21,28 +21,34 @@ class PostgreSql(
     override val reservedKeyWords: List<String> =
         executeQuery("SELECT word FROM pg_get_keywords() WHERE catcode = 'R'").map { getString("word") }
 
-    override val columnTypesMap: HashMap<KType, String> = hashMapOf(
-        boolType to "boolean",
-        int1Type to "int1",
-        int2Type to "int2",
-        int4Type to "int4",
-        int8Type to "int8",
-        timeType to "time",
-        timestampType to "timestamp",
-        dateType to "date",
-        decimalType to "decimal(10, 2)",
-        floatType to "float",
-        doubleType to "double",
-        stringType to "text",
+    override val defaultTypesMap: HashMap<KType, SqlType<*>> = hashMapOf(
+        boolType to SqlType<Boolean>("boolean"),
+        int2Type to SqlType<Short>("int2"),
+        int4Type to SqlType<Int>("int4"),
+        int8Type to SqlType<Long>("int8"),
+        timeType to SqlType<Time>("time"),
+        timestampType to SqlType<Timestamp>("timestamp"),
+        dateType to SqlType<Date>("date"),
+        decimalType to SqlType<BigDecimal>("decimal(10, 2)"),
+        floatType to SqlType<Float>("float"),
+        doubleType to SqlType<Double>("double precision"),
+        stringType to SqlType<String>("text"),
     )
 
     override fun <E : Entity> idColumn(table: Table<E>, prop: KMutableProperty1<E, Int>) =
-        Column(table, prop, "serial").primaryKey()
+        Column(table, prop, SqlType<Int>("serial")).primaryKey()
 
+
+    inline fun <reified E : Entity, T : Boolean?> bool(prop: KMutableProperty1<E, T>) = autoColumn(prop)
 
     inline fun <reified E : Entity, T : UByte?> byte(prop: KMutableProperty1<E, T>) = autoColumn(prop)
+    inline fun <reified E : Entity, T : Short?> int2(prop: KMutableProperty1<E, T>) = autoColumn(prop)
+    inline fun <reified E : Entity, T : Int?> int4(prop: KMutableProperty1<E, T>) = autoColumn(prop)
+    inline fun <reified E : Entity, T : Long?> int8(prop: KMutableProperty1<E, T>) = autoColumn(prop)
 
     inline fun <reified E : Entity, T : Float?> float(prop: KMutableProperty1<E, T>) = autoColumn(prop)
+    inline fun <reified E : Entity, T : Double?> double(prop: KMutableProperty1<E, T>) = autoColumn(prop)
+
 
     inline fun <reified E : Entity, T : BigDecimal?> decimal(prop: KMutableProperty1<E, T>, precision: Int, scale: Int) =
         column(prop, "decimal($precision, $scale)")
@@ -57,7 +63,6 @@ class PostgreSql(
 
     inline fun <reified E : Entity, T : String?> json(prop: KMutableProperty1<E, T>) = column(prop, "json")
     inline fun <reified E : Entity, T : String?> uuid(prop: KMutableProperty1<E, T>) = column(prop, "uuid")
-
 
     inline fun <reified E : Entity, T : Date?> date(prop: KMutableProperty1<E, T>) = autoColumn(prop)
     inline fun <reified E : Entity, T : Time?> time(prop: KMutableProperty1<E, T>, withTimeZone: Boolean = false) =

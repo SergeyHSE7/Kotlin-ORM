@@ -5,20 +5,16 @@ import Column
 import Entity
 import Reference
 import Table
-import autoColumn
 import column
 import org.tinylog.Logger
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.ResultSet
-import java.sql.SQLException
+import java.sql.*
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 
 abstract class Database(
     url: String,
-    user: String,
-    password: String,
+    user: String? = null,
+    password: String? = null,
     driver: String = "org.postgresql.Driver",
 ) {
     internal val connection: Connection = DriverManager.getConnection(url, user, password)
@@ -40,7 +36,7 @@ abstract class Database(
     internal fun executeQuery(sql: String): ResultSet = connection.createStatement().executeQuery(sql)
 
 
-    abstract val columnTypesMap: HashMap<KType, String>
+    abstract val defaultTypesMap: HashMap<KType, SqlType<*>>
     abstract fun <E: Entity> idColumn(table: Table<E>, prop: KMutableProperty1<E, Int>): Column<E, Int>
 
     inline fun <reified E : Entity> defaultEntities(noinline entities: () -> List<E>) {
@@ -58,12 +54,11 @@ abstract class Database(
         Table<E>().uniqueColumns.addAll(props.map { it.column.name })
     }
 
-    inline fun <reified E : Entity, T : Boolean?> bool(prop: KMutableProperty1<E, T>) = autoColumn(prop)
-    inline fun <reified E : Entity, T : Short?> int2(prop: KMutableProperty1<E, T>) = autoColumn(prop)
-    inline fun <reified E : Entity, T : Int?> int4(prop: KMutableProperty1<E, T>) = autoColumn(prop)
-    inline fun <reified E : Entity, T : Long?> int8(prop: KMutableProperty1<E, T>) = autoColumn(prop)
-    inline fun <reified E : Entity, T : Double?> double(prop: KMutableProperty1<E, T>) = autoColumn(prop)
 
+    data class SqlType<T>(val name: String,
+                       val customGetValue: ((rs: ResultSet) -> T)? = null,
+                       val customSetValue: ((ps: PreparedStatement, index: Int, value: Any?) -> Unit)? = null,
+    )
 }
 
 

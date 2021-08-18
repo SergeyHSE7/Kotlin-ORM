@@ -1,12 +1,12 @@
 package statements
 
+import Column
 import Entity
 import Table
 import database
 import org.tinylog.Logger
 import utils.getEntity
 import utils.map
-import utils.set
 import java.sql.PreparedStatement
 
 fun <E : Entity> Table<E>.insert(vararg insertEntities: E) = insert(insertEntities.toList())
@@ -49,14 +49,14 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
     private fun getPreparedStatement(preparedEntities: List<E> = entities): PreparedStatement =
         database.connection.prepareStatement(getSql(preparedEntities))
             .apply {
-                set(entities.flatMap { entity ->
-                    props.map {
-                        when (val value = it.get(entity)) {
+                entities.flatMap { entity ->
+                    props.map { prop ->
+                        Column[prop] to (when (val value = prop.get(entity)) {
                             is Entity -> value.id
                             else -> value
-                        }
+                        })
                     }
-                })
+                }.forEachIndexed { index, (column, value) -> column.setValue(this, index + 1, value) }
                 Logger.tag("INSERT").info { toString() }
             }
 }

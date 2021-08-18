@@ -1,7 +1,7 @@
 package entities
 
 import Entity
-import databases.PostgreSql
+import databases.PostgreSQL
 import kotlinx.serialization.Serializable
 import table
 
@@ -14,7 +14,7 @@ data class Book(
     var isbn: Int = 0
 ) : Entity()
 
-val BooksTable = table<Book, PostgreSql> {
+val BooksTable = table<Book, PostgreSQL> {
     varchar(Book::title, 100)
     varchar(Book::author, 100)
     int4(Book::publishedYear)

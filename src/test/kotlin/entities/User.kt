@@ -3,7 +3,7 @@ package entities
 import Action
 import Entity
 import autoTable
-import databases.PostgreSql
+import databases.PostgreSQL
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -17,7 +17,7 @@ data class User(
     val books: List<Book?> by manyToMany(UserBook::borrower, UserBook::book)
 }
 
-val UsersTable = autoTable<User, PostgreSql> {
+val UsersTable = autoTable<User, PostgreSQL> {
     varchar(User::username, 25)
     reference(User::address, Action.SetNull)
 

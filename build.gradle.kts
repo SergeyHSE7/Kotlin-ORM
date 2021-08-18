@@ -19,6 +19,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
 
     implementation("org.postgresql:postgresql:42.2.10")
+    implementation("org.xerial:sqlite-jdbc:3.36.0.1")
+
     implementation("org.atteo:evo-inflector:1.3")
     implementation("org.tinylog:tinylog-api:2.4.0-M1")
     implementation("org.tinylog:tinylog-impl:2.4.0-M1")

@@ -11,7 +11,6 @@ import kotlin.reflect.full.isSupertypeOf
 
 
 val boolType = Boolean::class.createType()
-val int1Type = UByte::class.createType()
 val int2Type = Short::class.createType()
 val int4Type = Int::class.createType()
 val int8Type = Long::class.createType()
@@ -25,7 +24,6 @@ val stringType = String::class.createType()
 
 val typeList = listOf(
     boolType,
-    int1Type,
     int2Type,
     int4Type,
     int8Type,
