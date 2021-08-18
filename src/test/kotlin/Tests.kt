@@ -10,7 +10,15 @@ class Tests : FreeSpec({
             url = "jdbc:postgresql://localhost:5432/FinAssistant",
             user = "postgres",
             password = "123456"
-        ) to { listOf(UserBooksTable, UsersTable, AddressesTable, BooksTable, TestTable) },
+        ) to {
+            listOf(
+                UserBooksTablePostgreSQL,
+                UsersTablePostgreSQL,
+                AddressesTablePostgreSQL,
+                BooksTablePostgreSQL,
+                TestTable
+            )
+        },
     )
 
     config {

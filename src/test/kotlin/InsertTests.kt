@@ -4,7 +4,7 @@ import io.kotest.matchers.shouldBe
 
 suspend inline fun FreeSpecContainerContext.insertTests() {
 
-    val newEntity = Test(string = "unknown", int = 5)
+    val newEntity = Test(uniqueValue = 5)
 
     "INSERT check" {
         (newEntity in Table<Test>()) shouldBe false

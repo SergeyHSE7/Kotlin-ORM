@@ -9,15 +9,9 @@ import kotlin.reflect.KMutableProperty1
 
 
 @Suppress("UNCHECKED_CAST")
-inline fun <reified E : Entity, DB: Database> autoTable(noinline columnsBody: DB.() -> Unit): Table<E> =
-    Table(E::class) {
-        (database as DB).columnsBody()
-        E::class.properties.map { it as KMutableProperty1<E, Any?> }.forEach { autoColumn(it) }
-    }
-
 inline fun <reified E : Entity, DB: Database> table(noinline columnsBody: DB.() -> Unit): Table<E> =
-    @Suppress("UNCHECKED_CAST")
     Table(E::class, columnsBody as Database.() -> Unit)
+
 
 enum class Action {
     Cascade, SetNull, SetDefault
@@ -25,7 +19,7 @@ enum class Action {
 
 class Table<E : Entity>(
     val entityClass: KClass<E>,
-    columnsBody: Database.() -> Unit
+    private val columnsBody: Database.() -> Unit
 ) {
     val cache = CacheMap<E>(Config.maxCacheSize)
     var tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
@@ -43,21 +37,21 @@ class Table<E : Entity>(
 
     fun isEmpty() = size == 0
 
-    init {
-        tables[entityClass] = this
+    fun createTable() {
         if (tableName in database.reservedKeyWords)
             throw LoggerException("\"$tableName\" is a reserved SQL keyword!")
 
-        @Suppress("UNCHECKED_CAST")
-        database.idColumn(this, entityClass.properties.first { it.name == "id" } as KMutableProperty1<E, Int>)
-        database.columnsBody()
-
         if (Config.refreshTables) dropTable()
-        createTable()
+        tables[entityClass] = this
+
+        database.columnsBody()
+        @Suppress("UNCHECKED_CAST")
+        entityClass.properties.forEach { column(it as KMutableProperty1<E, Any?>) }
+
+        create()
     }
 
-    fun createTable() = create()
-    fun dropTable() = drop()
+    fun dropTable() = drop().also { tables.remove(entityClass) }
     fun clearTable() = delete()
 
 

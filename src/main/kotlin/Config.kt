@@ -12,6 +12,7 @@ fun config(func: Config.() -> Unit): Unit = Config.apply(func).run {
     val loadRefs = alwaysLoadReferencesWhenAddingEntity
     alwaysLoadReferencesWhenAddingEntity = false
     with(tables()) {
+        forEach { it.createTable() }
         forEach { it.defaultEntities.save() }
         forEach { it.referencesAddMethods.forEach { it() } }
     }

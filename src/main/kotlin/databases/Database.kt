@@ -56,8 +56,8 @@ abstract class Database(
 
 
     data class SqlType<T>(val name: String,
-                       val customGetValue: ((rs: ResultSet) -> T)? = null,
-                       val customSetValue: ((ps: PreparedStatement, index: Int, value: Any?) -> Unit)? = null,
+                       val customGetValue: ((rs: ResultSet, name: String) -> T)? = null,
+                       val customSetValue: ((ps: PreparedStatement, index: Int, value: T) -> Unit)? = null,
     )
 }
 

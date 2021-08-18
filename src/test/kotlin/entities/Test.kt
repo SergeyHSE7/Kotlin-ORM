@@ -1,10 +1,11 @@
 package entities
 
 import Entity
-import autoTable
-import databases.PostgreSQL
+import column
+import databases.Database
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import table
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
@@ -23,17 +24,12 @@ data class Test(
     @Contextual var decimal: BigDecimal = BigDecimal(0),
     @Contextual var date: Date = Date(0),
     @Contextual var time: Time = Time(0),
-    @Contextual var timestamp: Timestamp = Timestamp(0)
+    @Contextual var timestamp: Timestamp = Timestamp(0),
+
+    var uniqueValue: Int = 0,
 ) : Entity()
 
 
-val TestTable = autoTable<Test, PostgreSQL> {
-    varchar(Test::string).unique()
-
-    defaultEntities {
-        listOf(
-            Test(string = "str1", int = 1),
-            Test(string = "str2", int = 2),
-        )
-    }
+val TestTable = table<Test, Database> {
+    column(Test::uniqueValue).unique()
 }

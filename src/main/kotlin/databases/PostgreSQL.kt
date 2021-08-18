@@ -3,7 +3,6 @@ package databases
 import Column
 import Entity
 import Table
-import autoColumn
 import column
 import utils.*
 import java.math.BigDecimal
@@ -36,18 +35,7 @@ class PostgreSQL(
     )
 
     override fun <E : Entity> idColumn(table: Table<E>, prop: KMutableProperty1<E, Int>) =
-        Column(table, prop, SqlType<Int>("serial")).primaryKey()
-
-
-    inline fun <reified E : Entity, T : Boolean?> bool(prop: KMutableProperty1<E, T>) = autoColumn(prop)
-
-    inline fun <reified E : Entity, T : UByte?> byte(prop: KMutableProperty1<E, T>) = autoColumn(prop)
-    inline fun <reified E : Entity, T : Short?> int2(prop: KMutableProperty1<E, T>) = autoColumn(prop)
-    inline fun <reified E : Entity, T : Int?> int4(prop: KMutableProperty1<E, T>) = autoColumn(prop)
-    inline fun <reified E : Entity, T : Long?> int8(prop: KMutableProperty1<E, T>) = autoColumn(prop)
-
-    inline fun <reified E : Entity, T : Float?> float(prop: KMutableProperty1<E, T>) = autoColumn(prop)
-    inline fun <reified E : Entity, T : Double?> double(prop: KMutableProperty1<E, T>) = autoColumn(prop)
+        Column(table, prop, SqlType("serial")).primaryKey()
 
 
     inline fun <reified E : Entity, T : BigDecimal?> decimal(prop: KMutableProperty1<E, T>, precision: Int, scale: Int) =
@@ -59,12 +47,10 @@ class PostgreSQL(
         column(prop, "varchar($size)")
     inline fun <reified E : Entity, T : String?> char(prop: KMutableProperty1<E, T>, size: Int = 60) =
         column(prop, "char($size)")
-    inline fun <reified E : Entity, T : String?> text(prop: KMutableProperty1<E, T>) = autoColumn(prop)
 
     inline fun <reified E : Entity, T : String?> json(prop: KMutableProperty1<E, T>) = column(prop, "json")
     inline fun <reified E : Entity, T : String?> uuid(prop: KMutableProperty1<E, T>) = column(prop, "uuid")
 
-    inline fun <reified E : Entity, T : Date?> date(prop: KMutableProperty1<E, T>) = autoColumn(prop)
     inline fun <reified E : Entity, T : Time?> time(prop: KMutableProperty1<E, T>, withTimeZone: Boolean = false) =
         column(prop, "time" + " with time zone".ifTrue(withTimeZone))
 

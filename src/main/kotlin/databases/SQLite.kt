@@ -3,6 +3,10 @@ package databases
 import Column
 import Entity
 import Table
+import utils.*
+import java.sql.Date
+import java.sql.Time
+import java.sql.Timestamp
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 
@@ -160,11 +164,22 @@ class SQLite(
     )
 
     override val defaultTypesMap: HashMap<KType, SqlType<*>> = hashMapOf(
+        boolType to SqlType(
+            "integer",
+            customGetValue = { rs, name -> rs.getInt(name) == 1 },
+            customSetValue = { ps, index, value -> ps.setInt(index, if (value) 1 else 0) }),
+        int1Type to SqlType<Byte>("integer"),
+        int2Type to SqlType<Short>("integer"),
+        int4Type to SqlType<Int>("integer"),
+        int8Type to SqlType<Long>("integer"),
+        floatType to SqlType<Float>("real"),
+        doubleType to SqlType<Double>("real"),
+        stringType to SqlType<String>("text"),
+        dateType to SqlType<Date>("text"),
+        timeType to SqlType<Time>("text"),
+        timestampType to SqlType<Timestamp>("text"),
     )
 
-    override fun <E : Entity> idColumn(table: Table<E>, prop: KMutableProperty1<E, Int>): Column<E, Int> {
-        TODO("Not yet implemented")
-    }
-
-
+    override fun <E : Entity> idColumn(table: Table<E>, prop: KMutableProperty1<E, Int>): Column<E, Int> =
+        Column(table, prop, SqlType("integer")).primaryKey()
 }

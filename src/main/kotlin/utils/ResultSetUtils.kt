@@ -17,14 +17,14 @@ fun <E : Entity, T> ResultSet.setProp(entity: E, column: Column<E, T>, lazy: Boo
     val prop = column.property
 
     if (column.refTable != null) {
-        val index = column.getValue(this) as? Int ?: return
+        val index = column.getValue(this, column.name) as? Int ?: return
 
         val obj = if (lazy) column.refTable!!.entityClass.createInstance().apply { id = index }
         else column.refTable!!.findById(index, false)
 
         @Suppress("UNCHECKED_CAST")
         prop.set(entity, obj as T)
-    } else prop.set(entity, column.getValue(this))
+    } else prop.set(entity, column.getValue(this, column.name))
 }
 
 

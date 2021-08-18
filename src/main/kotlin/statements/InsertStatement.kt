@@ -1,8 +1,8 @@
 package statements
 
-import Column
 import Entity
 import Table
+import column
 import database
 import org.tinylog.Logger
 import utils.getEntity
@@ -51,7 +51,7 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
             .apply {
                 entities.flatMap { entity ->
                     props.map { prop ->
-                        Column[prop] to (when (val value = prop.get(entity)) {
+                        prop.column to (when (val value = prop.get(entity)) {
                             is Entity -> value.id
                             else -> value
                         })

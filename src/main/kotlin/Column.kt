@@ -8,14 +8,15 @@ import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.jvm.javaType
 
 val KMutableProperty1<*, *>.column
-    get() = Column[this]
+    get() = Column.columns[this]!!
 
+@Suppress("UNCHECKED_CAST")
 class Reference<E : Entity, P : Entity?>(
     table: Table<E>,
     property: KMutableProperty1<E, P>,
     private val onDelete: Action
 ) :
-    Column<E, P>(table, property, database.defaultTypesMap[int4Type] as Database.SqlType<P>) {
+Column<E, P>(table, property, database.defaultTypesMap[int4Type] as Database.SqlType<P>) {
 
     init {
         with(table) {
@@ -28,26 +29,27 @@ class Reference<E : Entity, P : Entity?>(
 }
 
 inline fun <reified E : Entity, T> column(prop: KMutableProperty1<E, T>, sqlTypeName: String) =
-    Column(Table(), prop, Database.SqlType<T>(sqlTypeName))
+    Column(Table(), prop, Database.SqlType(sqlTypeName))
 
-inline fun <reified E : Entity> column(prop: KMutableProperty1<E, *>, sqlType: Database.SqlType<*>) =
+inline fun <reified E : Entity, T> column(prop: KMutableProperty1<E, T>, sqlType: Database.SqlType<T>) =
     Column(Table(), prop, sqlType)
 
+inline fun <reified E : Entity, T> column(prop: KMutableProperty1<E, T>): Column<E, *> = Table<E>().column(prop)
+
 @Suppress("UNCHECKED_CAST")
-inline fun <reified E : Entity> autoColumn(prop: KMutableProperty1<E, *>): Column<E, *> {
-    if (prop.name == "id") return database.idColumn(Table(), prop as KMutableProperty1<E, Int>)
+fun <E: Entity, T> Table<E>.column(prop: KMutableProperty1<E, T>): Column<E, *> {
+    if (prop.name == "id") return database.idColumn(this, prop as KMutableProperty1<E, Int>)
 
-    val sqlType: Database.SqlType<*>? = database.defaultTypesMap[prop.type]
+    val sqlType = database.defaultTypesMap[prop.type] as Database.SqlType<T>?
 
-    return if (sqlType != null) column(prop, sqlType)
-    else Reference(Table(), prop as KMutableProperty1<E, Entity?>, Action.SetDefault)
+    return if (sqlType != null) Column(this, prop, sqlType)
+    else Reference(this, prop as KMutableProperty1<E, Entity?>, Action.SetDefault)
 }
-
 
 open class Column<E : Entity, T>(
     table: Table<E>,
     val property: KMutableProperty1<E, T>,
-    private val sqlType: Database.SqlType<*>
+    private val sqlType: Database.SqlType<T>
 ) {
     @Suppress("UNCHECKED_CAST")
     val refTable by lazy { Table[(property.returnType.javaType as Class<Entity>).kotlin] }
@@ -58,10 +60,10 @@ open class Column<E : Entity, T>(
     private var isUnique = false
     private var isPrimaryKey = false
 
+    internal val getValue: (rs: ResultSet, name: String) -> T = sqlType.customGetValue ?: ::defaultGetValue
     @Suppress("UNCHECKED_CAST")
-    internal val getValue: (rs: ResultSet) -> T = (sqlType.customGetValue ?: ::defaultGetValue) as ((ResultSet) -> T)
     internal val setValue: (ps: PreparedStatement, index: Int, value: Any?) -> Unit =
-        sqlType.customSetValue ?: ::defaultSetValue
+        (sqlType.customSetValue ?: ::defaultSetValue) as (PreparedStatement, Int, Any?) -> Unit
 
     init {
         if (!table.columns.any { it.property == property }) {
@@ -81,7 +83,7 @@ open class Column<E : Entity, T>(
     }
 
     fun unique() = this.also { isUnique = true }
-    fun primaryKey() = this.also { isPrimaryKey = true }
+    internal fun primaryKey() = this.also { isPrimaryKey = true }
     fun default(value: T) = this.also { defaultValue = value }
 
     protected open fun attributesToSql(): String = "PRIMARY KEY ".ifTrue(isPrimaryKey) +
@@ -95,14 +97,12 @@ open class Column<E : Entity, T>(
         "${name.padEnd(nameLength)} ${sqlType.name.uppercase()} ${attributesToSql()}".trim()
 
     companion object {
-        val columns = HashMap<KMutableProperty1<*, *>, Column<*, *>>()
-
-        internal operator fun get(prop: KMutableProperty1<*, *>) = columns[prop]!!
+        internal val columns = HashMap<KMutableProperty1<*, *>, Column<*, *>>()
     }
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun <E : Entity, T> Column<E, T>.defaultGetValue(rs: ResultSet): T =
+private fun <E : Entity, T> Column<E, T>.defaultGetValue(rs: ResultSet, name: String): T =
     if (refTable != null) rs.getInt(name) as T
     else when (property.type) {
         decimalType -> rs.getBigDecimal(name)
