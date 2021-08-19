@@ -5,6 +5,7 @@ import Entity
 import Table
 import column
 import database
+import databases.MariaDB
 import databases.PostgreSQL
 import databases.SQLite
 import org.tinylog.Logger
@@ -96,17 +97,24 @@ class SelectStatement<E : Entity>(
         }
 
     fun getSql(): String =
-        "SELECT" + (if (selectAll) " *" else if (columns.size > 0) columns.joinToString(prefix = " ") else " id") +
+        "SELECT" +
+                (if (selectAll) " *"
+                else if (columns.size > 0) columns.joinToString(prefix = " ")
+                else " id".ifTrue(database !is PostgreSQL)) +
                 " FROM ${table.tableName}" +
                 joinTables.joinToString("") +
                 whereStatement.getSql() +
-                (" ORDER BY " + orderColumns.joinToString { it.fullColumnName + if (it.isDescending) " DESC" else " ASC" })
+                (" ORDER BY " + orderColumns.joinToString
+                { it.fullColumnName + if (it.isDescending) " DESC" else " ASC" })
                     .ifTrue(orderColumns.isNotEmpty()) +
                 when (database) {
                     is PostgreSQL ->
                         " LIMIT $limit".ifTrue(limit != null) + " OFFSET $offset".ifTrue(offset != null)
                     is SQLite ->
                         if (offset != null) " LIMIT ${limit ?: -1} OFFSET $offset"
+                        else " LIMIT $limit".ifTrue(limit != null)
+                    is MariaDB ->
+                        if (offset != null) " LIMIT ${limit ?: (table.size - offset!!)} OFFSET $offset"
                         else " LIMIT $limit".ifTrue(limit != null)
                 }
 

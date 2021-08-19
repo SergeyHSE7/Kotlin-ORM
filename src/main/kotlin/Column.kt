@@ -1,4 +1,5 @@
 import databases.Database
+import databases.MariaDB
 import databases.PostgreSQL
 import org.tinylog.Logger
 import statements.alter
@@ -22,19 +23,21 @@ Column<E, P>(table, property, database.defaultTypesMap[int4Type] as Database.Sql
     init {
         with(table) {
             if (!references.any { it.property == property }) {
-                if (database is PostgreSQL) referencesAddMethods.add { alter().addForeignKey(this@Reference) }
+                if (database is PostgreSQL || database is MariaDB)
+                    referencesAddMethods.add { alter().addForeignKey(this@Reference) }
                 references.add(this@Reference)
             }
         }
     }
 
     fun getForeignKey(): String = "FOREIGN KEY (${property.column.name}) REFERENCES " +
-            "${(property.returnType.javaType as Class<Entity>).kotlin.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)}(id) " +
+            "${(property.returnType.javaType as Class<Entity>).kotlin.simpleName!!
+                .transformCase(Case.Pascal, Case.Snake, true)}(id) " +
             "ON DELETE ${onDelete.name.transformCase(Case.Pascal, Case.Normal).uppercase()}"
 }
 
 inline fun <reified E : Entity, T> column(prop: KMutableProperty1<E, T>, sqlTypeName: String) =
-    Column(Table(), prop, Database.SqlType(sqlTypeName))
+    column(prop, Database.SqlType(sqlTypeName))
 
 inline fun <reified E : Entity, T> column(prop: KMutableProperty1<E, T>, sqlType: Database.SqlType<T>) =
     Column(Table(), prop, sqlType)

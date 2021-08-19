@@ -4,8 +4,10 @@ import Entity
 import Table
 import column
 import database
+import databases.MariaDB
 import org.tinylog.Logger
 import utils.getEntity
+import utils.ifTrue
 import utils.map
 import java.sql.PreparedStatement
 
@@ -41,9 +43,10 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
     }
 
     fun getSql(preparedEntities: List<E> = entities): String =
-        "INSERT INTO ${table.tableName} (${table.columns.filter { it.name != "id" }.joinToString { it.name }}) " +
+        "INSERT ${"IGNORE ".ifTrue(database is MariaDB)}INTO ${table.tableName} " +
+                "(${table.columns.filter { it.name != "id" }.joinToString { it.name }}) " +
                 "VALUES ${preparedEntities.joinToString { "(${props.joinToString { "?" }})" }} " +
-                "ON CONFLICT DO NOTHING " +
+                "ON CONFLICT DO NOTHING ".ifTrue(database !is MariaDB) +
                 "RETURNING ${if (getEntity) "*" else "id"}"
 
     private fun getPreparedStatement(preparedEntities: List<E> = entities): PreparedStatement =

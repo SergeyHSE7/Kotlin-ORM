@@ -1,3 +1,4 @@
+import databases.MariaDB
 import databases.PostgreSQL
 import databases.SQLite
 import entities.*
@@ -16,11 +17,16 @@ class Tests : FreeSpec({
 
     val databases = listOf(
         PostgreSQL(
-            url = "jdbc:postgresql://localhost:5432/FinAssistant",
-            user = "postgres",
-            password = "123456"
+            url = System.getenv("postgresql_url"),
+            user = System.getenv("postgresql_user"),
+            password = System.getenv("postgresql_password")
         ),
-        SQLite(url = "jdbc:sqlite:C:\\SQLite3\\test_db.sqlite"),
+        SQLite(url = System.getenv("sqlite_url")),
+        MariaDB(
+            url = System.getenv("mariadb_url"),
+            user = System.getenv("mariadb_user"),
+            password = System.getenv("mariadb_password")
+        )
     )
 
     config {

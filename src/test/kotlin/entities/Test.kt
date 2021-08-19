@@ -14,17 +14,17 @@ import java.sql.Timestamp
 @Serializable
 data class Test(
     override var id: Int = 0,
-    var string: String = "",
-    var bool: Boolean = false,
-    var short: Short = 0,
-    var int: Int = 0,
-    var long: Long = 0L,
-    var float: Float = 0F,
-    var double: Double = 0.0,
-    @Contextual var decimal: BigDecimal = BigDecimal(0),
-    @Contextual var date: Date = Date(0),
-    @Contextual var time: Time = Time(0),
-    @Contextual var timestamp: Timestamp = Timestamp(0),
+    var stringValue: String = "",
+    var boolValue: Boolean = false,
+    var shortValue: Short = 0,
+    var intValue: Int = 0,
+    var longValue: Long = 0L,
+    var floatValue: Float = 0F,
+    var doubleValue: Double = 0.0,
+    @Contextual var decimalValue: BigDecimal = BigDecimal(0),
+    @Contextual var dateValue: Date = Date(0),
+    @Contextual var timeValue: Time = Time(0),
+    @Contextual var timestampValue: Timestamp = Timestamp(0),
 
     var uniqueValue: Int = 0,
 ) : Entity()
