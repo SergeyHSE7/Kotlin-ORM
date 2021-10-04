@@ -5,9 +5,7 @@ import Table
 import column
 import sql_type_functions.SqlNumber
 import sql_type_functions.SqlString
-import java.sql.Date
-import java.sql.Time
-import java.sql.Timestamp
+import utils.toSql
 import kotlin.reflect.KMutableProperty1
 
 typealias WhereCondition = WhereStatement.() -> String
@@ -72,15 +70,6 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
 
     private fun <T : Any?> T.boolOperator(obj: Any?, strOperator: String): String =
         this.toSql() + " $strOperator " + obj.toSql()
-
-    private fun <T : Any?> T.toSql() = when (this) {
-        is String, is Date, is Time, is Timestamp -> "'$this'"
-        is Entity -> id.toString()
-        is EntityProperty<*> -> fullColumnName
-        is List<Any?> -> joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
-        is KMutableProperty1<*, *> -> column.fullName
-        else -> this.toString()
-    }
 
 
     val <S : String?, T : KMutableProperty1<*, S>> T.sqlString

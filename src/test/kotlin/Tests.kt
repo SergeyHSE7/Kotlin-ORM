@@ -1,4 +1,3 @@
-import databases.MariaDB
 import databases.PostgreSQL
 import databases.SQLite
 import entities.*
@@ -22,11 +21,11 @@ class Tests : FreeSpec({
             password = System.getenv("postgresql_password")
         ),
         SQLite(url = System.getenv("sqlite_url")),
-        MariaDB(
+        /*MariaDB(
             url = System.getenv("mariadb_url"),
             user = System.getenv("mariadb_user"),
             password = System.getenv("mariadb_password")
-        )
+        )*/
     )
 
     config {

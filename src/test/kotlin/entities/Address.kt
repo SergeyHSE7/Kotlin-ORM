@@ -24,4 +24,5 @@ private val defaultEntities = { listOf(
 
 val AddressesTable = table<Address, Database> {
     defaultEntities(defaultEntities)
+    uniqueColumns(Address::city, Address::country)
 }

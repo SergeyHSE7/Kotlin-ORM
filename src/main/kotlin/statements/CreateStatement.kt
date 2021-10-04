@@ -2,6 +2,7 @@ package statements
 
 import Entity
 import Table
+import column
 import database
 import databases.SQLite
 import org.tinylog.Logger
@@ -20,8 +21,8 @@ private class CreateStatement<in E : Entity>(private val table: Table<E>) {
                 } +
                 table.references.joinToString(",\n\t", prefix = ",\n\t") { it.getForeignKey() }
                     .ifTrue(database is SQLite && table.references.isNotEmpty()) +
-                ",\nCONSTRAINT unique_columns UNIQUE (${table.uniqueColumns.joinToString()})"
-                    .ifTrue(table.uniqueColumns.isNotEmpty()) +
+                ",\nCONSTRAINT ${table.tableName}_unique_columns UNIQUE (${table.uniqueProps.joinToString { it.column.name }})"
+                    .ifTrue(table.uniqueProps.isNotEmpty()) +
                 "\n)"
 
     fun execute() = database.executeSql(getSql().also { Logger.tag("CREATE").info { "\n" + getSql() } })

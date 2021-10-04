@@ -5,7 +5,6 @@ import Column
 import Entity
 import Reference
 import Table
-import column
 import org.tinylog.Logger
 import java.sql.*
 import kotlin.reflect.KMutableProperty1
@@ -52,15 +51,15 @@ sealed class Database(
         Table<E>().defaultEntitiesMethod = entities
     }
 
-    inline fun <reified E : Entity, T : Entity> reference(
-        prop: KMutableProperty1<E, T?>,
+    inline fun <reified E : Entity, T : Entity?> reference(
+        prop: KMutableProperty1<E, T>,
         onDelete: Action = Action.SetDefault
     ) =
         Reference(Table(), prop, onDelete)
 
 
     inline fun <reified E : Entity> uniqueColumns(vararg props: KMutableProperty1<E, *>) {
-        Table<E>().uniqueColumns.addAll(props.map { it.column.name })
+        Table<E>().uniqueProps.addAll(props)
     }
 
 

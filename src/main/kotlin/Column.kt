@@ -18,7 +18,7 @@ class Reference<E : Entity, P : Entity?>(
     property: KMutableProperty1<E, P>,
     private val onDelete: Action
 ) :
-Column<E, P>(table, property, database.defaultTypesMap[int4Type] as Database.SqlType<P>) {
+    Column<E, P>(table, property, database.defaultTypesMap[int4Type] as Database.SqlType<P>) {
 
     init {
         with(table) {
@@ -45,7 +45,7 @@ inline fun <reified E : Entity, T> column(prop: KMutableProperty1<E, T>, sqlType
 inline fun <reified E : Entity, T> column(prop: KMutableProperty1<E, T>): Column<E, *> = Table<E>().column(prop)
 
 @Suppress("UNCHECKED_CAST")
-fun <E: Entity, T> Table<E>.column(prop: KMutableProperty1<E, T>): Column<E, *> {
+fun <E : Entity, T> Table<E>.column(prop: KMutableProperty1<E, T>): Column<E, *> {
     if (prop.name == "id") return database.idColumn(this, prop as KMutableProperty1<E, Int>)
 
     val sqlType = database.defaultTypesMap[prop.type] as Database.SqlType<T>?
@@ -63,12 +63,13 @@ open class Column<E : Entity, T>(
     val refTable by lazy { Table[(property.returnType.javaType as Class<Entity>).kotlin] }
     val name: String = property.name.transformCase(Case.Camel, Case.Snake)
     val fullName: String = table.tableName + "." + name
-    private var defaultValue: T? = null
+    private var defaultValue: T? = property.get(table.defaultEntity)
     private var isNotNull = false
     private var isUnique = false
     private var isPrimaryKey = false
 
     internal val getValue: (rs: ResultSet, name: String) -> T = sqlType.customGetValue ?: ::defaultGetValue
+
     @Suppress("UNCHECKED_CAST")
     internal val setValue: (ps: PreparedStatement, index: Int, value: Any?) -> Unit =
         (sqlType.customSetValue ?: ::defaultSetValue) as (PreparedStatement, Int, Any?) -> Unit
@@ -97,8 +98,7 @@ open class Column<E : Entity, T>(
     protected open fun attributesToSql(): String = "PRIMARY KEY ".ifTrue(isPrimaryKey) +
             "NOT NULL ".ifTrue(isNotNull) +
             "UNIQUE ".ifTrue(isUnique) +
-            "DEFAULT $defaultValue".ifTrue(defaultValue != null && defaultValue !is String) +
-            "DEFAULT '$defaultValue'".ifTrue(defaultValue != null && defaultValue is String)
+            "DEFAULT ${defaultValue.toSql()}".ifTrue(!isPrimaryKey && defaultValue != null)
 
 
     fun toSql(nameLength: Int = name.length): String =

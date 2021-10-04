@@ -1,7 +1,13 @@
 package utils
 
+import Entity
+import column
 import org.atteo.evo.inflector.English
-import java.util.*
+import statements.EntityProperty
+import java.sql.Date
+import java.sql.Time
+import java.sql.Timestamp
+import kotlin.reflect.KMutableProperty1
 
 fun String.ifTrue(flag: Boolean) = if (flag) this else ""
 
@@ -45,3 +51,12 @@ enum class Case {
     Normal, Pascal, Snake, Camel, Kebab
 }
 
+
+fun <T : Any?> T.toSql() = when (this) {
+    is String, is Date, is Time, is Timestamp -> "'$this'"
+    is Entity -> id.toString()
+    is EntityProperty<*> -> fullColumnName
+    is List<Any?> -> joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
+    is KMutableProperty1<*, *> -> column.fullName
+    else -> this.toString()
+}

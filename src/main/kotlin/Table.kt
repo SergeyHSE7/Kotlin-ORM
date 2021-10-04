@@ -6,6 +6,7 @@ import utils.transformCase
 import kotlin.collections.set
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.full.createInstance
 
 
 @Suppress("UNCHECKED_CAST")
@@ -24,12 +25,13 @@ class Table<E : Entity>(
     val cache = CacheMap<E>(Config.maxCacheSize)
     var tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
     val defaultEntities by lazy { defaultEntitiesMethod() }
+    var defaultEntitiesMethod: () -> List<E> = { listOf() }
 
     internal val columns = mutableListOf<Column<E, *>>()
     internal val references = mutableListOf<Reference<E, *>>()
-    val uniqueColumns = mutableSetOf<String>()
+    val uniqueProps = mutableSetOf<KMutableProperty1<E, *>>()
     internal val referencesAddMethods: MutableSet<() -> Unit> = mutableSetOf()
-    var defaultEntitiesMethod: () -> List<E> = { listOf() }
+    internal val defaultEntity: E = entityClass.createInstance()
 
 
     val size: Int
@@ -54,7 +56,7 @@ class Table<E : Entity>(
     fun dropTable() = drop().also {
         tables.remove(entityClass)
         columns.clear()
-        uniqueColumns.clear()
+        uniqueProps.clear()
         references.clear()
         referencesAddMethods.clear()
         cache.clear()
