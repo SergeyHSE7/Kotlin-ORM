@@ -12,7 +12,7 @@ data class User(
     var username: String = "",
     var address: Address? = null,
     var enabled: Boolean = true,
-    var age: Int? = 0
+    var age: Int? = 18
 ) : Entity() {
     val books: List<Book?> by manyToMany(UserBook::borrower, UserBook::book)
 }
@@ -28,6 +28,6 @@ private val defaultEntities = { listOf(
 
 val UsersTable = table<User, Database> {
     reference(User::address, Action.SetNull)
-
+    check(User::age) { (it greaterEq 18) and (it less 80) }
     defaultEntities(defaultEntities)
 }

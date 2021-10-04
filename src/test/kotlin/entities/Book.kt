@@ -24,7 +24,7 @@ private val defaultEntities = { listOf(
 )}
 
 val BooksTable = table<Book, Database> {
-    column(Book::isbn).unique()
+    column(Book::isbn).unique().check { (it greaterEq 100000) and (it lessEq 999999) }
 
     defaultEntities(defaultEntities)
 }

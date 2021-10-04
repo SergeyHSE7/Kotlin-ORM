@@ -6,6 +6,7 @@ import Entity
 import Reference
 import Table
 import org.tinylog.Logger
+import statements.WhereStatement
 import java.sql.*
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
@@ -61,6 +62,13 @@ sealed class Database(
     inline fun <reified E : Entity> uniqueColumns(vararg props: KMutableProperty1<E, *>) {
         Table<E>().uniqueProps.addAll(props)
     }
+
+
+    inline fun <reified E : Entity, P : KMutableProperty1<E, *>> check(
+        property: P,
+        crossinline condition: WhereStatement.(P) -> String
+    ) =
+        this.also { Table<E>().checkConditions.add { condition(property) } }
 
 
     data class SqlType<T>(

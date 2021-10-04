@@ -2,6 +2,7 @@ import databases.Database
 import databases.MariaDB
 import databases.PostgreSQL
 import org.tinylog.Logger
+import statements.WhereStatement
 import statements.alter
 import utils.*
 import java.math.BigDecimal
@@ -31,8 +32,10 @@ class Reference<E : Entity, P : Entity?>(
     }
 
     fun getForeignKey(): String = "FOREIGN KEY (${property.column.name}) REFERENCES " +
-            "${(property.returnType.javaType as Class<Entity>).kotlin.simpleName!!
-                .transformCase(Case.Pascal, Case.Snake, true)}(id) " +
+            "${
+                (property.returnType.javaType as Class<Entity>).kotlin.simpleName!!
+                    .transformCase(Case.Pascal, Case.Snake, true)
+            }(id) " +
             "ON DELETE ${onDelete.name.transformCase(Case.Pascal, Case.Normal).uppercase()}"
 }
 
@@ -67,6 +70,7 @@ open class Column<E : Entity, T>(
     private var isNotNull = false
     private var isUnique = false
     private var isPrimaryKey = false
+    private val checkConditions = table.checkConditions
 
     internal val getValue: (rs: ResultSet, name: String) -> T = sqlType.customGetValue ?: ::defaultGetValue
 
@@ -94,6 +98,8 @@ open class Column<E : Entity, T>(
     fun unique() = this.also { isUnique = true }
     internal fun primaryKey() = this.also { isPrimaryKey = true }
     fun default(value: T) = this.also { defaultValue = value }
+    fun check(condition: WhereStatement.(KMutableProperty1<E, T>) -> String) =
+        this.also { checkConditions.add { condition(property) } }
 
     protected open fun attributesToSql(): String = "PRIMARY KEY ".ifTrue(isPrimaryKey) +
             "NOT NULL ".ifTrue(isNotNull) +

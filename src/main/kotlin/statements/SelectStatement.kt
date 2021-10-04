@@ -116,6 +116,7 @@ class SelectStatement<E : Entity>(
                     is MariaDB ->
                         if (offset != null) " LIMIT ${limit ?: (table.size - offset!!)} OFFSET $offset"
                         else " LIMIT $limit".ifTrue(limit != null)
+                    else -> ""
                 }
 
 

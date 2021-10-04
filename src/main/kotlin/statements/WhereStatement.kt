@@ -58,8 +58,8 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
     infix fun <T : Any?> T.match(regex: Regex): String = boolOperator(regex.pattern, "~")
     infix fun <T : Any?> T.notMatch(regex: Regex): String = boolOperator(regex.pattern, "!~")
 
-    infix fun <T : Any?> T.inList(list: List<T>): String = boolOperator(list, "IN")
-    infix fun <T : Any?> T.notInList(list: List<T>): String = boolOperator(list, "NOT IN")
+    infix fun <T : Any?> T.inList(list: List<T>): String = if (list.isEmpty()) "" else boolOperator(list, "IN")
+    infix fun <T : Any?> T.notInList(list: List<T>): String = if (list.isEmpty()) "" else boolOperator(list, "NOT IN")
 
     fun <P : Any, T : KMutableProperty1<*, P?>> T.isNull(): String = toSql() + " IS NULL"
     fun <P : Any, T : KMutableProperty1<*, P?>> T.isNotNull(): String = toSql() + " IS NOT NULL"

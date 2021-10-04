@@ -32,6 +32,7 @@ class Table<E : Entity>(
     val uniqueProps = mutableSetOf<KMutableProperty1<E, *>>()
     internal val referencesAddMethods: MutableSet<() -> Unit> = mutableSetOf()
     internal val defaultEntity: E = entityClass.createInstance()
+    val checkConditions = mutableListOf<WhereCondition>()
 
 
     val size: Int
@@ -57,6 +58,7 @@ class Table<E : Entity>(
         tables.remove(entityClass)
         columns.clear()
         uniqueProps.clear()
+        checkConditions.clear()
         references.clear()
         referencesAddMethods.clear()
         cache.clear()
