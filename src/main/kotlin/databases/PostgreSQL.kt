@@ -5,6 +5,7 @@ import Entity
 import Table
 import column
 import utils.*
+import java.io.File
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
@@ -18,7 +19,8 @@ class PostgreSQL(
     password: String,
 ) : Database(url, user, password, "org.postgresql.Driver") {
     override val reservedKeyWords: List<String> =
-        executeQuery("SELECT word FROM pg_get_keywords() WHERE catcode = 'R'").map { getString("word") }
+        File("src\\main\\kotlin\\databases\\PostgreSQL Reserved Keywords.txt").readText().split(',')
+
 
     override val defaultTypesMap: HashMap<KType, SqlType<*>> = hashMapOf(
         boolType to SqlType<Boolean>("boolean"),
@@ -38,13 +40,23 @@ class PostgreSQL(
         Column(table, prop, SqlType("serial")).primaryKey()
 
 
-    inline fun <reified E : Entity, T : BigDecimal?> decimal(prop: KMutableProperty1<E, T>, precision: Int, scale: Int) =
+    inline fun <reified E : Entity, T : BigDecimal?> decimal(
+        prop: KMutableProperty1<E, T>,
+        precision: Int,
+        scale: Int
+    ) =
         column(prop, "decimal($precision, $scale)")
-    inline fun <reified E : Entity, T : BigDecimal?> numeric(prop: KMutableProperty1<E, T>, precision: Int, scale: Int) =
+
+    inline fun <reified E : Entity, T : BigDecimal?> numeric(
+        prop: KMutableProperty1<E, T>,
+        precision: Int,
+        scale: Int
+    ) =
         column(prop, "numeric($precision, $scale)")
 
     inline fun <reified E : Entity, T : String?> varchar(prop: KMutableProperty1<E, T>, size: Int = 60) =
         column(prop, "varchar($size)")
+
     inline fun <reified E : Entity, T : String?> char(prop: KMutableProperty1<E, T>, size: Int = 60) =
         column(prop, "char($size)")
 
@@ -54,6 +66,9 @@ class PostgreSQL(
     inline fun <reified E : Entity, T : Time?> time(prop: KMutableProperty1<E, T>, withTimeZone: Boolean = false) =
         column(prop, "time" + " with time zone".ifTrue(withTimeZone))
 
-    inline fun <reified E : Entity, T : Timestamp?> timestamp(prop: KMutableProperty1<E, T>, withTimeZone: Boolean = false) =
+    inline fun <reified E : Entity, T : Timestamp?> timestamp(
+        prop: KMutableProperty1<E, T>,
+        withTimeZone: Boolean = false
+    ) =
         column(prop, "timestamp" + " with time zone".ifTrue(withTimeZone))
 }

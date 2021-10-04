@@ -1,4 +1,6 @@
 import databases.Database
+import sql_type_functions.SqlList
+import sql_type_functions.SqlNumber
 import statements.*
 import utils.CacheMap
 import utils.Case
@@ -36,7 +38,7 @@ class Table<E : Entity>(
 
 
     val size: Int
-        get() = select(EntityProperty(this, "*")) { it.count() }.toInt()
+        get() = select().aggregateColumn(SqlList("*").count()).getResultSet().apply { next() }.getInt(1)
 
     fun isEmpty() = size == 0
 
@@ -126,7 +128,10 @@ class Table<E : Entity>(
     operator fun minusAssign(entity: E) = delete(entity)
     fun delete(entity: E): Unit = deleteById(entity.id)
 
-    fun <T> getValuesOfColumn(prop: KMutableProperty1<E, T>): List<T> = select(prop).getEntities().map(prop)
+    fun <T> getColumn(prop: KMutableProperty1<E, T>): List<T> = select(prop).getEntities().map(prop)
+
+    fun <T : Number?> aggregateBy(prop: KMutableProperty1<E, T>, func: SqlList.() -> SqlNumber): Int =
+        select().aggregateColumn(func(SqlList(prop.column.fullName))).getResultSet().apply { next() }.getInt(1)
 
     fun all(condition: WhereCondition): Boolean = select().where(condition).lazy().size == size
     fun any(condition: WhereCondition): Boolean = select().where(condition).limit(1).lazy().getResultSet().next()

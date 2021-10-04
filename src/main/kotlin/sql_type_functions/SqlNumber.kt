@@ -11,4 +11,7 @@ class SqlNumber(value: String) : SqlBase(value) {
     fun round(decimalPlaces: Int = 0) =
         if (decimalPlaces != 0) simpleFunction("ROUND", decimalPlaces)
         else simpleFunction("ROUND")
+
+    private fun simpleFunction(functionName: String, vararg params: Int) =
+        SqlNumber(simpleBaseFunction(functionName, *params))
 }

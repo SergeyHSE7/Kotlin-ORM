@@ -3,6 +3,7 @@ package statements
 import Entity
 import Table
 import column
+import sql_type_functions.SqlList
 import sql_type_functions.SqlNumber
 import sql_type_functions.SqlString
 import utils.toSql
@@ -78,7 +79,7 @@ class WhereStatement(conditionBody: WhereStatement.() -> String? = { null }) {
     val <N : Number?, T : KMutableProperty1<*, N>> T.sqlInt
         get() = SqlNumber(column.fullName)
 
-    val <N : Number?, T : KMutableProperty1<*, List<N>>> T.sqlList
-        get() = SqlNumber(column.fullName)
+    val <L : List<*>?, T : KMutableProperty1<*, L>> T.sqlList
+        get() = SqlList(column.fullName)
 
 }

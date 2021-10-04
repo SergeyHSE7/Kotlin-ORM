@@ -9,8 +9,7 @@ import databases.MariaDB
 import databases.PostgreSQL
 import databases.SQLite
 import org.tinylog.Logger
-import sql_type_functions.SqlList
-import sql_type_functions.SqlNumber
+import sql_type_functions.SqlBase
 import utils.getEntity
 import utils.ifTrue
 import utils.map
@@ -25,13 +24,6 @@ data class OrderColumn(val fullColumnName: String, val isDescending: Boolean = f
 fun <E : Entity> Table<E>.selectAll(): SelectStatement<E> = SelectStatement(this, selectAll = true)
 fun <E : Entity> Table<E>.select(vararg props: KMutableProperty1<*, *>): SelectStatement<E> =
     SelectStatement(this, props.map { prop -> prop.column.fullName })
-
-fun <E : Entity> Table<E>.select(prop: EntityProperty<*>, function: (SqlList) -> SqlNumber): Double =
-    SelectStatement(this, listOf(function(SqlList(prop.columnName)).toString()))
-        .getResultSet().apply { next() }.getDouble(1)
-
-fun <E : Entity> Table<E>.select(prop: KMutableProperty1<*, *>, function: (SqlList) -> SqlNumber): Double =
-    select(EntityProperty(this, prop), function)
 
 
 class SelectStatement<E : Entity>(
@@ -63,6 +55,9 @@ class SelectStatement<E : Entity>(
 
     inline fun <reified T : Entity, R : T?> innerJoinBy(property: KMutableProperty1<E, R>) =
         innerJoin(Table<T>()) { property eq Table<T>().entityProperty("id") }
+
+    internal fun <SB : SqlBase> aggregateColumn(column: SB, name: String? = null) =
+        this.apply { columns.add(column.toString() + " AS $name".ifTrue(name != null)) }
 
     fun lazy() = setLazy(true)
     fun setLazy(lazy: Boolean) = this.apply { this.lazy = lazy }

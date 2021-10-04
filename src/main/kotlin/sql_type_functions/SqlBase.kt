@@ -3,12 +3,8 @@ package sql_type_functions
 import utils.ifTrue
 
 sealed class SqlBase(protected var value: String) {
-    protected fun simpleFunction(functionName: String, vararg params: Int) = this
-        .also {
-            value = "$functionName($value" +
-                    params.joinToString(", ", ", ").ifTrue(params.isNotEmpty()) +
-                    ")"
-        }
+    protected open fun simpleBaseFunction(functionName: String, vararg params: Int): String =
+        "$functionName($value" + params.joinToString(", ", ", ").ifTrue(params.isNotEmpty()) + ")"
 
     override fun toString(): String = value
 }

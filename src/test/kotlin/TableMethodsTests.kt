@@ -44,7 +44,11 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
         usersTable.none { User::age greater 50 } shouldBe false
     }
 
-    "getValuesOfColumn" {
-        usersTable.getValuesOfColumn(User::username) shouldBe usersTable.getAll().map { it.username }
+    "getColumn" {
+        usersTable.getColumn(User::username) shouldBe usersTable.getAll().map { it.username }
+    }
+
+    "aggregateBy" {
+        usersTable.aggregateBy(User::age) { sum() } shouldBe usersTable.getColumn(User::age).filterNotNull().sum()
     }
 }
