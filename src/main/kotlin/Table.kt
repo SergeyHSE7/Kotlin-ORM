@@ -105,8 +105,20 @@ class Table<E : Entity>(
     fun first(loadReferences: Boolean = Config.loadReferencesByDefault, condition: WhereCondition? = null): E? =
         selectAll().where(condition).limit(1).setLazy(!loadReferences).getEntity()
 
+    fun firstOrDefault(
+        defaultValue: E = entityClass.createInstance(),
+        loadReferences: Boolean = Config.loadReferencesByDefault,
+        condition: WhereCondition? = null
+    ): E = first(loadReferences, condition) ?: defaultValue
+
     fun last(loadReferences: Boolean = Config.loadReferencesByDefault, condition: WhereCondition? = null): E? =
         selectAll().where(condition).orderByDescending().limit(1).setLazy(!loadReferences).getEntity()
+
+    fun lastOrDefault(
+        defaultValue: E = entityClass.createInstance(),
+        loadReferences: Boolean = Config.loadReferencesByDefault,
+        condition: WhereCondition? = null
+    ): E = last(loadReferences, condition) ?: defaultValue
 
     fun take(n: Int, loadReferences: Boolean = Config.loadReferencesByDefault) =
         selectAll().limit(n).setLazy(!loadReferences).getEntities()
@@ -128,7 +140,8 @@ class Table<E : Entity>(
     operator fun minusAssign(entity: E) = delete(entity)
     fun delete(entity: E): Unit = deleteById(entity.id)
 
-    fun <T> getColumn(prop: KMutableProperty1<E, T>): List<T> = select(prop).getEntities().map(prop)
+    fun <T : Any, P : T?> getColumn(prop: KMutableProperty1<E, P>): List<T> =
+        select(prop).getEntities().mapNotNull(prop)
 
     fun <T : Number?> aggregateBy(prop: KMutableProperty1<E, T>, func: SqlList.() -> SqlNumber): Int =
         select().aggregateColumn(func(SqlList(prop.column.fullName))).getResultSet().apply { next() }.getInt(1)

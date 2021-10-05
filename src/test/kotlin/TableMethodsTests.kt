@@ -27,6 +27,11 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
         usersTable.last { User::address eq 5 }!!.username shouldBe "Alex"
     }
 
+    "firstOrDefault/lastOrDefault" {
+        usersTable.firstOrDefault { User::age less 18 }.age shouldBe 18
+        usersTable.lastOrDefault(User(username = "Default")) { User::address eq 8 }.username shouldBe "Default"
+    }
+
     "contains" {
         (defaultUsers[2] in usersTable) shouldBe true
         (defaultUsers in usersTable) shouldBe true
@@ -49,6 +54,6 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
     }
 
     "aggregateBy" {
-        usersTable.aggregateBy(User::age) { sum() } shouldBe usersTable.getColumn(User::age).filterNotNull().sum()
+        usersTable.aggregateBy(User::age) { sum() } shouldBe usersTable.getColumn(User::age).sum()
     }
 }
