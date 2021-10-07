@@ -126,7 +126,12 @@ class Table<E : Entity>(
     fun takeLast(n: Int, loadReferences: Boolean = Config.loadReferencesByDefault) =
         selectAll().orderByDescending().limit(n).setLazy(!loadReferences).getEntities()
 
-    fun count(condition: WhereCondition): Int = select().where(condition).size
+    fun count(condition: WhereCondition): Int = select().aggregateColumn(SqlList("*").count()).where(condition)
+        .getResultSet().apply { next() }.getInt(1)
+
+    fun countNotNull(prop: KMutableProperty1<E, *>): Int =
+        select().aggregateColumn(SqlList(prop.column.fullName).count())
+            .getResultSet().apply { next() }.getInt(1)
 
 
     operator fun set(id: Int, entity: E) = update(entity) { this.id = id }
@@ -146,7 +151,7 @@ class Table<E : Entity>(
     fun <T : Number?> aggregateBy(prop: KMutableProperty1<E, T>, func: SqlList.() -> SqlNumber): Int =
         select().aggregateColumn(func(SqlList(prop.column.fullName))).getResultSet().apply { next() }.getInt(1)
 
-    fun all(condition: WhereCondition): Boolean = select().where(condition).lazy().size == size
+    fun all(condition: WhereCondition): Boolean = !any { condition(this).inverse() }
     fun any(condition: WhereCondition): Boolean = select().where(condition).limit(1).lazy().getResultSet().next()
     fun none(condition: WhereCondition): Boolean = !any(condition)
 

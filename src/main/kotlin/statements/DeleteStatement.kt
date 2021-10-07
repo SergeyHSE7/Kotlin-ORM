@@ -16,7 +16,7 @@ fun <E : Entity> Table<E>.deleteById(id: Int) =
 private class DeleteStatement<in E : Entity>(private val table: Table<E>) {
     private var whereStatement: WhereStatement = WhereStatement()
 
-    fun where(conditionBody: WhereCondition?) = this.apply { whereStatement.addCondition(conditionBody) }
+    fun where(conditionBody: WhereCondition?) = this.apply { if (conditionBody != null) whereStatement = WhereStatement(conditionBody) }
 
     fun execute() {
         database.executeSql(getSql().also { Logger.tag("DELETE").info { it } })

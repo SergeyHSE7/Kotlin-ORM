@@ -48,7 +48,7 @@ class SelectStatement<E : Entity>(
     private val orderColumns = mutableSetOf<OrderColumn>()
     private var whereStatement: WhereStatement = WhereStatement()
 
-    fun where(conditionBody: WhereCondition?) = this.apply { whereStatement.addCondition(conditionBody) }
+    fun where(conditionBody: WhereCondition?) = this.apply { if (conditionBody != null) whereStatement = WhereStatement(conditionBody) }
 
     fun innerJoin(joinTable: Table<*>, condition: WhereCondition) =
         this.apply { joinTables.add(JoinTable(JoinType.Inner, joinTable, condition)) }

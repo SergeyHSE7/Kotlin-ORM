@@ -50,6 +50,7 @@ class Tests : FreeSpec({
 
             "INSERT" - { insertTests() }
             "SELECT" - { selectTests() }
+            "WHERE" - { whereTests() }
             "UPDATE" - { updateTests() }
             "References" - { referenceTests() }
 

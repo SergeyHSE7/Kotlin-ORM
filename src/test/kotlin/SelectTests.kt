@@ -18,12 +18,6 @@ suspend inline fun FreeSpecContainerContext.selectTests() {
         usersTable[100] shouldBe null
     }
 
-    "WHERE" {
-        usersTable.getAll { User::enabled eq true }.all { it.enabled } shouldBe true
-        usersTable.findIdOf { User::username eq "Marco" } shouldBe 2
-        usersTable.first { (User::enabled eq false) and (User::username startsWith "S") }?.username shouldBe "Simon"
-    }
-
     "LIMIT" {
         usersTable.selectAll().limit(3).getEntities().size shouldBe 3
     }

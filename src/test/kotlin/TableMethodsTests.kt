@@ -17,8 +17,10 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
 
     "count" {
         usersTable.count { User::address eq Address(5) } shouldBe 2
-        usersTable.count { (User::address eq 5) and (User::age eq 42) } shouldBe 1
-        usersTable.count { (User::address eq 5) and (User::age eq 43) and (User::enabled eq false) } shouldBe 0
+        usersTable.count { (User::address eq 5) * (User::age eq 42) } shouldBe 1
+        usersTable.count { (User::address eq 5) * (User::age eq 43) * (User::enabled eq false) } shouldBe 0
+
+        usersTable.countNotNull(User::address) shouldBe usersTable.getAll().count { it.address != null }
     }
 
     "first/last" {

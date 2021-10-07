@@ -2,6 +2,7 @@ import databases.Database
 import databases.MariaDB
 import databases.PostgreSQL
 import org.tinylog.Logger
+import statements.Expression
 import statements.WhereStatement
 import statements.alter
 import utils.*
@@ -98,7 +99,7 @@ open class Column<E : Entity, T>(
     fun unique() = this.also { isUnique = true }
     internal fun primaryKey() = this.also { isPrimaryKey = true }
     fun default(value: T) = this.also { defaultValue = value }
-    fun check(condition: WhereStatement.(KMutableProperty1<E, T>) -> String) =
+    fun check(condition: WhereStatement.(KMutableProperty1<E, T>) -> Expression) =
         this.also { checkConditions.add { condition(property) } }
 
     protected open fun attributesToSql(): String = "PRIMARY KEY ".ifTrue(isPrimaryKey) +

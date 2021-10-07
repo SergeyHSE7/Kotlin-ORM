@@ -8,7 +8,7 @@ import org.tinylog.Logger
 import kotlin.reflect.KMutableProperty1
 
 fun <E : Entity> Table<out E>.update(entity: E, props: List<KMutableProperty1<E, *>>) =
-    UpdateStatement(this, entity, props).where { "id = ${entity.id}" }.execute()
+    UpdateStatement(this, entity, props).where { Expression("id = ${entity.id}") }.execute()
         .also { cache.remove(entity.id) }
 
 private class UpdateStatement<out E : Entity>(
@@ -42,7 +42,7 @@ private class UpdateStatement<out E : Entity>(
 
     private var whereStatement: WhereStatement = WhereStatement()
 
-    fun where(conditionBody: WhereCondition) = this.apply { whereStatement.addCondition(conditionBody) }
+    fun where(conditionBody: WhereCondition?) = this.apply { if (conditionBody != null) whereStatement = WhereStatement(conditionBody) }
 
     fun execute() {
         updateReferences()

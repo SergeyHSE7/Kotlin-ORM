@@ -28,6 +28,6 @@ private val defaultEntities = { listOf(
 
 val UsersTable = table<User, Database> {
     reference(User::address, Action.SetNull)
-    check(User::age) { (it greaterEq 18) and (it less 80) }
+    check(User::age) { (it greaterEq 18) * (it less 80) }
     defaultEntities(defaultEntities)
 }

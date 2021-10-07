@@ -6,6 +6,7 @@ import Entity
 import Reference
 import Table
 import org.tinylog.Logger
+import statements.Expression
 import statements.WhereCondition
 import statements.WhereStatement
 import java.sql.*
@@ -67,7 +68,7 @@ sealed class Database(
 
     inline fun <reified E : Entity, P : KMutableProperty1<E, *>> check(
         property: P,
-        crossinline condition: WhereStatement.(P) -> String
+        crossinline condition: WhereStatement.(P) -> Expression
     ) =
         this.also { Table<E>().checkConditions.add { condition(property) } }
 
