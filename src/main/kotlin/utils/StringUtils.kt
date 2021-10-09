@@ -3,7 +3,6 @@ package utils
 import Entity
 import column
 import org.atteo.evo.inflector.English
-import statements.EntityProperty
 import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
@@ -55,7 +54,6 @@ enum class Case {
 fun <T : Any?> T.toSql() = when (this) {
     is String, is Date, is Time, is Timestamp -> "'$this'"
     is Entity -> id.toString()
-    is EntityProperty<*> -> fullColumnName
     is List<Any?> -> joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
     is KMutableProperty1<*, *> -> column.fullName
     else -> this.toString()

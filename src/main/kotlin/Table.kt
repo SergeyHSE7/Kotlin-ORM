@@ -86,7 +86,7 @@ class Table<E : Entity>(
     operator fun contains(entity: E): Boolean = select().apply {
         entity.properties.forEach { prop ->
             if (prop.name != "id")
-                where { this@Table.entityProperty(prop) eq prop.getter.call(entity) }
+                where { prop eq prop.getter.call(entity) }
         }
     }.getResultSet().next()
 
@@ -98,7 +98,7 @@ class Table<E : Entity>(
         selectAll().where(condition).setLazy(!loadReferences).getEntities()
 
     fun findById(id: Int, loadReferences: Boolean = Config.loadReferencesByDefault): E? =
-        cache[id, loadReferences] ?: first(loadReferences) { this@Table.entityProperty("id") eq id }
+        cache[id, loadReferences] ?: first(loadReferences) { "id" eq id }
 
     fun findIdOf(condition: WhereCondition): Int? = SelectStatement(this, listOf("id")).where(condition).getEntity()?.id
 
@@ -151,7 +151,7 @@ class Table<E : Entity>(
     fun <T : Number?> aggregateBy(prop: KMutableProperty1<E, T>, func: SqlList.() -> SqlNumber): Int =
         select().aggregateColumn(func(SqlList(prop.column.fullName))).getResultSet().apply { next() }.getInt(1)
 
-    fun all(condition: WhereCondition): Boolean = !any { condition(this).inverse() }
+    fun all(condition: WhereCondition): Boolean = !any { !condition(this) }
     fun any(condition: WhereCondition): Boolean = select().where(condition).limit(1).lazy().getResultSet().next()
     fun none(condition: WhereCondition): Boolean = !any(condition)
 

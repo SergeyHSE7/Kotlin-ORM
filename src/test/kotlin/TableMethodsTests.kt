@@ -40,7 +40,7 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
         (User(username = "Anonymous") in usersTable) shouldBe false
     }
 
-    "all/any/none check" {
+    "all/any/none" {
         usersTable.all { User::age greater 10 } shouldBe true
         usersTable.all { User::age greater 50 } shouldBe false
 

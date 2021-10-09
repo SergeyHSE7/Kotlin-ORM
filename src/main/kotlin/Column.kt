@@ -66,7 +66,8 @@ open class Column<E : Entity, T>(
     @Suppress("UNCHECKED_CAST")
     val refTable by lazy { Table[(property.returnType.javaType as Class<Entity>).kotlin] }
     val name: String = property.name.transformCase(Case.Camel, Case.Snake)
-    val fullName: String = table.tableName + "." + name
+    val tableName: String = table.tableName
+    val fullName: String = "$tableName.$name"
     private var defaultValue: T? = property.get(table.defaultEntity)
     private var isNotNull = false
     private var isUnique = false

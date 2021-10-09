@@ -17,9 +17,7 @@ import java.sql.ResultSet
 import kotlin.reflect.KMutableProperty1
 
 
-data class OrderColumn(val fullColumnName: String, val isDescending: Boolean = false) {
-    constructor(prop: EntityProperty<*>, isDescending: Boolean = false) : this(prop.fullColumnName, isDescending)
-}
+data class OrderColumn(val fullColumnName: String, val isDescending: Boolean = false)
 
 fun <E : Entity> Table<E>.selectAll(): SelectStatement<E> = SelectStatement(this, selectAll = true)
 fun <E : Entity> Table<E>.select(vararg props: KMutableProperty1<*, *>): SelectStatement<E> =
@@ -54,7 +52,7 @@ class SelectStatement<E : Entity>(
         this.apply { joinTables.add(JoinTable(JoinType.Inner, joinTable, condition)) }
 
     inline fun <reified T : Entity, R : T?> innerJoinBy(property: KMutableProperty1<E, R>) =
-        innerJoin(Table<T>()) { property eq Table<T>().entityProperty("id") }
+        innerJoin(Table<T>()) { property eq "${Table<T>().tableName}.id" }
 
     internal fun <SB : SqlBase> aggregateColumn(column: SB, name: String? = null) =
         this.apply { columns.add(column.toString() + " AS $name".ifTrue(name != null)) }
@@ -67,7 +65,7 @@ class SelectStatement<E : Entity>(
 
     fun orderByDescending(vararg props: KMutableProperty1<E, *>) =
         this.apply {
-            if (props.isEmpty()) orderColumns.add(OrderColumn(EntityProperty(table, "id"), true))
+            if (props.isEmpty()) orderColumns.add(OrderColumn("${table.tableName}.id", true))
             else orderColumns.addAll(props.map { OrderColumn(it.column.fullName, true) })
         }
 

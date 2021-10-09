@@ -1,4 +1,6 @@
+import databases.SQLite
 import entities.User
+import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.scopes.FreeSpecContainerContext
 import io.kotest.matchers.shouldBe
 import statements.Expression
@@ -14,8 +16,29 @@ suspend inline fun FreeSpecContainerContext.whereTests() {
         usersTable.first { (User::enabled eq false) * (User::username startsWith "S") }?.username shouldBe "Simon"
     }
 
+    "IN" {
+        usersTable.all { User::username inColumn User::username } shouldBe true
+        usersTable.count { User::username inColumn User::username.where { User::username startsWith "S" } } shouldBe 3
+        usersTable.first { User::username notInColumn User::username } shouldBe null
+    }
+
+    "ALL/ANY" {
+        if (database is SQLite) {
+            shouldThrowAny { usersTable.first { User::age greaterEq all(User::age) }!!.age }
+            shouldThrowAny { usersTable.count { User::age less any(User::age.where { User::enabled eq false }) } }
+        } else {
+            usersTable.first { User::age greaterEq all(User::age) }!!.age shouldBe 67
+            usersTable.count { User::age less any(User::age.where { User::enabled eq false }) } shouldBe 4
+        }
+    }
+
+    "EXISTS" {
+        usersTable.count { exists(User::address) } shouldBe 6
+    }
+
     "Order" {
         listOf<WhereStatement.() -> Pair<Expression, Expression>>(
+            { expr[0] + expr[1] + expr[2] to Expression("(0 OR 1 OR 2)") },
             { expr[0] + expr[1] * expr[2] to Expression("0 OR 1 AND 2") },
             { (expr[0] + expr[1]) * expr[2] to Expression("(0 OR 1) AND 2") },
             { expr[0] + expr[1] * (expr[2] + expr[3]) to Expression("0 OR 1 AND (2 OR 3)") },
@@ -28,7 +51,7 @@ suspend inline fun FreeSpecContainerContext.whereTests() {
             { !(expr[0] eq expr[1]) to Expression("0 != 1") },
             { !(expr[0] less expr[1]) to Expression("0 >= 1") },
             { !((expr[0] eq expr[1]) + (expr[2] eq expr[3])) to Expression("0 != 1 AND 2 != 3") },
-            { !(!(expr[0] neq expr[1]) + (expr[2] eq expr[3]) * !(expr[4] neq expr[5])) to Expression("0 != 1 AND (2 != 3 OR 4 != 5)") },
+            { !((expr[0] eq expr[1]) + (expr[2] eq expr[3]) * (expr[4] eq expr[5])) to Expression("0 != 1 AND (2 != 3 OR 4 != 5)") },
         )
             .forEach { it(WhereStatement()).run { first shouldBe second } }
     }
