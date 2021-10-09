@@ -1,9 +1,13 @@
+@file:Suppress("UNCHECKED_CAST")
+
 import databases.Database
+import org.tinylog.Logger
 import sql_type_functions.SqlList
 import sql_type_functions.SqlNumber
 import statements.*
 import utils.CacheMap
 import utils.Case
+import utils.map
 import utils.transformCase
 import kotlin.collections.set
 import kotlin.reflect.KClass
@@ -11,14 +15,13 @@ import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.createInstance
 
 
-@Suppress("UNCHECKED_CAST")
 inline fun <reified E : Entity, DB : Database> table(noinline columnsBody: DB.() -> Unit = {}): Table<E> =
     Table(E::class, columnsBody as Database.() -> Unit)
-
 
 enum class Action {
     Cascade, SetNull, SetDefault
 }
+
 
 class Table<E : Entity>(
     val entityClass: KClass<E>,
@@ -50,7 +53,6 @@ class Table<E : Entity>(
         tables[entityClass] = this
 
         database.columnsBody()
-        @Suppress("UNCHECKED_CAST")
         entityClass.properties.forEach { column(it as KMutableProperty1<E, Any?>) }
 
         create()
@@ -149,7 +151,25 @@ class Table<E : Entity>(
         select(prop).getEntities().mapNotNull(prop)
 
     fun <T : Number?> aggregateBy(prop: KMutableProperty1<E, T>, func: SqlList.() -> SqlNumber): Int =
-        select().aggregateColumn(func(SqlList(prop.column.fullName))).getResultSet().apply { next() }.getInt(1)
+        select().aggregateColumn(func(SqlList(prop.column.name))).getResultSet().apply { next() }.getInt(1)
+
+    fun <T : Number?, G : Any?> groupAggregate(
+        groupBy: KMutableProperty1<E, G>,
+        aggregateBy: KMutableProperty1<E, T>,
+        aggregateFunc: SqlList.() -> SqlNumber,
+        filter: (WhereStatement.(SqlNumber) -> Expression)? = null
+    ): Map<G, Int> {
+        val sqlNumber = aggregateFunc(SqlList(aggregateBy.column.name))
+        val sql = select(groupBy).aggregateColumn(sqlNumber).getSql() +
+                " GROUP BY ${groupBy.column.name}" +
+                if (filter != null) " HAVING ${WhereStatement().filter(sqlNumber)}" else ""
+        val map = mutableMapOf<G, Int>()
+        database.executeQuery(sql.also { Logger.tag("SELECT").info { it } }).map {
+            map[groupBy.column.getValueByIndex(this, 1) as G] = getInt(2)
+        }
+        return map
+    }
+
 
     fun all(condition: WhereCondition): Boolean = !any { !condition(this) }
     fun any(condition: WhereCondition): Boolean = select().where(condition).limit(1).lazy().getResultSet().next()
@@ -159,11 +179,9 @@ class Table<E : Entity>(
     companion object {
         val tables = HashMap<KClass<*>, Table<*>>()
 
-        @Suppress("UNCHECKED_CAST")
         inline operator fun <reified T : Entity> invoke() = tables[T::class] as Table<T>?
             ?: throw LoggerException("Table for class ${T::class.simpleName} was not initialized!")
 
-        @Suppress("UNCHECKED_CAST")
         internal operator fun <T : Entity> get(kClass: KClass<T>) = tables[kClass] as Table<Entity>?
     }
 

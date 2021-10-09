@@ -9,7 +9,7 @@ import databases.MariaDB
 import databases.PostgreSQL
 import databases.SQLite
 import org.tinylog.Logger
-import sql_type_functions.SqlBase
+import sql_type_functions.SqlNumber
 import utils.getEntity
 import utils.ifTrue
 import utils.map
@@ -54,8 +54,7 @@ class SelectStatement<E : Entity>(
     inline fun <reified T : Entity, R : T?> innerJoinBy(property: KMutableProperty1<E, R>) =
         innerJoin(Table<T>()) { property eq "${Table<T>().tableName}.id" }
 
-    internal fun <SB : SqlBase> aggregateColumn(column: SB, name: String? = null) =
-        this.apply { columns.add(column.toString() + " AS $name".ifTrue(name != null)) }
+    internal fun aggregateColumn(aggregation: SqlNumber) = this.apply { columns.add(aggregation.toString()) }
 
     fun lazy() = setLazy(true)
     fun setLazy(lazy: Boolean) = this.apply { this.lazy = lazy }
@@ -109,7 +108,6 @@ class SelectStatement<E : Entity>(
                     is MariaDB ->
                         if (offset != null) " LIMIT ${limit ?: (table.size - offset!!)} OFFSET $offset"
                         else " LIMIT $limit".ifTrue(limit != null)
-                    else -> ""
                 }
 
 

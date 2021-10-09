@@ -41,3 +41,5 @@ val typeList = listOf(
 
 val KMutableProperty1<*, *>.type: KType?
     get() = typeList.firstOrNull { returnType.isSupertypeOf(it) }
+
+fun KMutableProperty1<*, *>.isTypeOf(type: KType) = returnType.isSupertypeOf(type)

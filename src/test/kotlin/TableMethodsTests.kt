@@ -2,6 +2,7 @@ import entities.Address
 import entities.User
 import io.kotest.core.spec.style.scopes.FreeSpecContainerContext
 import io.kotest.matchers.shouldBe
+import sql_type_functions.count
 
 suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
     val usersTable = Table<User>()
@@ -57,5 +58,13 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
 
     "aggregateBy" {
         usersTable.aggregateBy(User::age) { sum() } shouldBe usersTable.getColumn(User::age).sum()
+    }
+
+    "groupAggregate" {
+        val map = Table<Address>().groupAggregate(Address::country, Address::id, ::count)
+        println(map)
+        map["USA"] shouldBe 2
+
+        Table<Address>().groupAggregate(Address::country, Address::id, ::count) { it eq 2 }.size shouldBe 1
     }
 }

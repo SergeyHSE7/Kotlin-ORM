@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 import databases.Database
 import databases.MariaDB
 import databases.PostgreSQL
@@ -6,15 +8,14 @@ import statements.Expression
 import statements.WhereStatement
 import statements.alter
 import utils.*
-import java.math.BigDecimal
-import java.sql.*
+import java.sql.PreparedStatement
+import java.sql.ResultSet
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.jvm.javaType
 
 val KMutableProperty1<*, *>.column
     get() = Column.columns[this]!!
 
-@Suppress("UNCHECKED_CAST")
 class Reference<E : Entity, P : Entity?>(
     table: Table<E>,
     property: KMutableProperty1<E, P>,
@@ -48,7 +49,6 @@ inline fun <reified E : Entity, T> column(prop: KMutableProperty1<E, T>, sqlType
 
 inline fun <reified E : Entity, T> column(prop: KMutableProperty1<E, T>): Column<E, *> = Table<E>().column(prop)
 
-@Suppress("UNCHECKED_CAST")
 fun <E : Entity, T> Table<E>.column(prop: KMutableProperty1<E, T>): Column<E, *> {
     if (prop.name == "id") return database.idColumn(this, prop as KMutableProperty1<E, Int>)
 
@@ -63,7 +63,6 @@ open class Column<E : Entity, T>(
     val property: KMutableProperty1<E, T>,
     private val sqlType: Database.SqlType<T>
 ) {
-    @Suppress("UNCHECKED_CAST")
     val refTable by lazy { Table[(property.returnType.javaType as Class<Entity>).kotlin] }
     val name: String = property.name.transformCase(Case.Camel, Case.Snake)
     val tableName: String = table.tableName
@@ -74,11 +73,20 @@ open class Column<E : Entity, T>(
     private var isPrimaryKey = false
     private val checkConditions = table.checkConditions
 
-    internal val getValue: (rs: ResultSet, name: String) -> T = sqlType.customGetValue ?: ::defaultGetValue
+    internal val getValue: (rs: ResultSet, name: String) -> T = sqlType.customGetValue ?: { rs, name ->
+        getValueByIndex(rs, rs.findColumn(name)) }
 
-    @Suppress("UNCHECKED_CAST")
+    internal val getValueByIndex: (rs: ResultSet, index: Int) -> T = { rs, index ->
+        when {
+            property.isTypeOf(floatType) -> rs.getFloat(index)
+            property.isTypeOf(int2Type) -> rs.getShort(index)
+            else -> rs.getObject(index)
+        } as T }
+
     internal val setValue: (ps: PreparedStatement, index: Int, value: Any?) -> Unit =
-        (sqlType.customSetValue ?: ::defaultSetValue) as (PreparedStatement, Int, Any?) -> Unit
+        (sqlType.customSetValue ?: { ps, index, value ->
+            ps.setObject(index, value)
+        }) as (PreparedStatement, Int, Any?) -> Unit
 
     init {
         if (!table.columns.any { it.property == property }) {
@@ -116,39 +124,3 @@ open class Column<E : Entity, T>(
         internal val columns = HashMap<KMutableProperty1<*, *>, Column<*, *>>()
     }
 }
-
-@Suppress("UNCHECKED_CAST")
-private fun <E : Entity, T> Column<E, T>.defaultGetValue(rs: ResultSet, name: String): T =
-    if (refTable != null) rs.getInt(name) as T
-    else when (property.type) {
-        decimalType -> rs.getBigDecimal(name)
-        stringType -> rs.getString(name)
-        int8Type -> rs.getLong(name)
-        int4Type -> rs.getInt(name)
-        int2Type -> rs.getShort(name)
-        doubleType -> rs.getDouble(name)
-        floatType -> rs.getFloat(name)
-        boolType -> rs.getBoolean(name)
-        dateType -> rs.getDate(name)
-        timestampType -> rs.getTimestamp(name)
-        timeType -> rs.getTime(name)
-        else -> throw LoggerException("Unknown type: $fullName - ${property.type}")
-    } as T
-
-
-private fun defaultSetValue(ps: PreparedStatement, index: Int, value: Any?) =
-    when (value) {
-        is String -> ps.setString(index, value)
-        is BigDecimal -> ps.setBigDecimal(index, value)
-        is Long -> ps.setLong(index, value)
-        is Int -> ps.setInt(index, value)
-        is Short -> ps.setShort(index, value)
-        is Boolean -> ps.setBoolean(index, value)
-        is Float -> ps.setFloat(index, value)
-        is Double -> ps.setDouble(index, value)
-        is Date -> ps.setDate(index, value)
-        is Time -> ps.setTime(index, value)
-        is Timestamp -> ps.setTimestamp(index, value)
-        null -> ps.setNull(index, 4)
-        else -> throw LoggerException("Unknown type: $value")
-    }
