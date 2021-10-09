@@ -33,23 +33,26 @@ abstract class Entity {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun <E : Entity> E.loadReferences(): E? = table.findById(id, loadReferences = true) as E?
+fun <E : Entity?> E.loadReferences(): E? = if (this == null) null else table.findById(id, loadReferences = true) as E?
 internal fun <E : Entity?> E.loadReferencesIf(condition: Boolean): E? =
-    if (condition && this != null) this.loadReferences() else this
+    if (condition) this.loadReferences() else this
 
 @Suppress("UNCHECKED_CAST")
-fun <E : Entity> E.save(): E? = table.add(this) as E?
+fun <E : Entity?> E.save(): E? = if (this == null) null else table.add(this) as E?
 
 @Suppress("UNCHECKED_CAST")
-fun <E : Entity> List<E>.save(): List<E> = firstOrNull()?.let { it.table.add(this) as List<E> } ?: listOf()
+fun <E : Entity?> List<E>.save(): List<E> =
+    firstOrNull()?.let { it.table.add(this.filterNotNull()) as List<E> } ?: listOf()
 
-inline fun <reified E : Entity> E.update(vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {
+inline fun <U : E?, reified E: Entity> U.update(vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {
+    if (this == null) return
     func(this)
     Table<E>().update(this, props.toList())
 }
 
-fun <E : Entity> E.delete(): Unit = table.delete(this)
-
+fun <E : Entity?> E.delete() {
+    if (this != null) table.delete(this)
+}
 
 val KClass<out Entity>.properties
     get() = memberProperties.mapNotNull { it as? KMutableProperty1 }

@@ -16,6 +16,9 @@ import utils.map
 import java.sql.ResultSet
 import kotlin.reflect.KMutableProperty1
 
+enum class JoinType {
+    Inner, Left
+}
 
 data class OrderColumn(val fullColumnName: String, val isDescending: Boolean = false)
 
@@ -29,30 +32,31 @@ class SelectStatement<E : Entity>(
     columns: List<String> = listOf(),
     private val selectAll: Boolean = false
 ) {
-    enum class JoinType {
-        Inner, Left, Right, Full, Cross
-    }
-
-    data class JoinTable(val joinType: JoinType, val table: Table<*>, val condition: WhereCondition) {
-        override fun toString(): String = if (joinType == JoinType.Cross) " CROSS JOIN ${table.tableName}"
-        else " ${joinType.name.uppercase()} JOIN ${table.tableName} ON ${WhereStatement().condition()}"
-    }
-
     private var lazy: Boolean = !Config.loadReferencesByDefault
     private var limit: Int? = null
     private var offset: Int? = null
-    private val joinTables = mutableListOf<JoinTable>()
+    private val joinTables = mutableListOf<String>()
     private val columns = columns.toMutableSet()
     private val orderColumns = mutableSetOf<OrderColumn>()
     private var whereStatement: WhereStatement = WhereStatement()
 
-    fun where(conditionBody: WhereCondition?) = this.apply { if (conditionBody != null) whereStatement = WhereStatement(conditionBody) }
+    fun where(conditionBody: WhereCondition?) =
+        this.apply { if (conditionBody != null) whereStatement = WhereStatement(conditionBody) }
 
-    fun innerJoin(joinTable: Table<*>, condition: WhereCondition) =
-        this.apply { joinTables.add(JoinTable(JoinType.Inner, joinTable, condition)) }
+    fun join(joinTable: Table<*>, joinType: JoinType = JoinType.Inner, condition: WhereCondition) =
+        this.apply { joinTables.add(" ${joinType.name.uppercase()} JOIN ${joinTable.tableName} ON ${WhereStatement().condition()}") }
 
-    inline fun <reified T : Entity, R : T?> innerJoinBy(property: KMutableProperty1<E, R>) =
-        innerJoin(Table<T>()) { property eq "${Table<T>().tableName}.id" }
+    inline fun <reified E : Entity> join(joinType: JoinType = JoinType.Inner, noinline condition: WhereCondition) =
+        join(Table<E>(), joinType, condition)
+
+    inline fun <reified T : Entity, R : T?> joinBy(
+        property: KMutableProperty1<E, R>,
+        joinType: JoinType = JoinType.Inner
+    ) =
+        join(Table<T>(), joinType) { "${Table<T>().tableName}.id" eq property }
+
+    fun crossJoin(joinTable: Table<*>) = this.apply { joinTables.add(" CROSS JOIN ${joinTable.tableName}") }
+    inline fun <reified E : Entity> crossJoin() = crossJoin(Table<E>())
 
     internal fun aggregateColumn(aggregation: SqlNumber) = this.apply { columns.add(aggregation.toString()) }
 
@@ -88,12 +92,12 @@ class SelectStatement<E : Entity>(
             if (selectAll) table.cache.addAll(it, !lazy)
         }
 
+    private fun getSelectValues() = (if (selectAll) " *"
+    else if (columns.size > 0) columns.joinToString(prefix = " ")
+    else " id".ifTrue(database !is PostgreSQL))
+
     fun getSql(): String =
-        "SELECT" +
-                (if (selectAll) " *"
-                else if (columns.size > 0) columns.joinToString(prefix = " ")
-                else " id".ifTrue(database !is PostgreSQL)) +
-                " FROM ${table.tableName}" +
+        "SELECT${getSelectValues()} FROM ${table.tableName}" +
                 joinTables.joinToString("") +
                 whereStatement.getSql() +
                 (" ORDER BY " + orderColumns.joinToString
@@ -108,6 +112,7 @@ class SelectStatement<E : Entity>(
                     is MariaDB ->
                         if (offset != null) " LIMIT ${limit ?: (table.size - offset!!)} OFFSET $offset"
                         else " LIMIT $limit".ifTrue(limit != null)
+                    else -> ""
                 }
 
 

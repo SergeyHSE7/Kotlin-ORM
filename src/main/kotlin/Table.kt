@@ -170,6 +170,20 @@ class Table<E : Entity>(
         return map
     }
 
+    fun <G : Any?> groupCounts(
+        groupBy: KMutableProperty1<E, G>,
+        filter: (WhereStatement.(SqlNumber) -> Expression)? = null
+    ): Map<G, Int> {
+        val sqlNumber = SqlList("*").count()
+        val sql = select(groupBy).aggregateColumn(sqlNumber).getSql() +
+                " GROUP BY ${groupBy.column.name}" +
+                if (filter != null) " HAVING ${WhereStatement().filter(sqlNumber)}" else ""
+        val map = mutableMapOf<G, Int>()
+        database.executeQuery(sql.also { Logger.tag("SELECT").info { it } }).map {
+            map[groupBy.column.getValueByIndex(this, 1) as G] = getInt(2)
+        }
+        return map
+    }
 
     fun all(condition: WhereCondition): Boolean = !any { !condition(this) }
     fun any(condition: WhereCondition): Boolean = select().where(condition).limit(1).lazy().getResultSet().next()

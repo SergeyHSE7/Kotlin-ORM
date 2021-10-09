@@ -19,7 +19,7 @@ data class User(
 
 private val defaultEntities = { listOf(
         User(username = "Kevin", address = Address(1), enabled = true, age = 18),
-        User(username = "Marco", address = Address(3), enabled = false, age = 25),
+        User(username = "Marco", address = null, enabled = false, age = 25),
         User(username = "Sue", address = Address(2), enabled = true, age = 22),
         User(username = "Sergey", address = Address(5), enabled = true, age = 67),
         User(username = "Alex", address = Address(5), enabled = false, age = 42),

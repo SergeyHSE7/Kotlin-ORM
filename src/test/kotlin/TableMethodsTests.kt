@@ -65,6 +65,7 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
         println(map)
         map["USA"] shouldBe 2
 
+        Table<Address>().groupCounts(Address::country) shouldBe map
         Table<Address>().groupAggregate(Address::country, Address::id, ::count) { it eq 2 }.size shouldBe 1
     }
 }
