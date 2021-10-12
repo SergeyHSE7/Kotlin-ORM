@@ -34,7 +34,7 @@ class SelectStatement<E : Entity>(
 ) {
     private var lazy: Boolean = !Config.loadReferencesByDefault
     private var limit: Int? = null
-    private var offset: Int? = null
+    private var offset: Int = 0
     private val joinTables = mutableListOf<String>()
     private val columns = columns.toMutableSet()
     private val orderColumns = mutableSetOf<OrderColumn>()
@@ -92,9 +92,9 @@ class SelectStatement<E : Entity>(
             if (selectAll) table.cache.addAll(it, !lazy)
         }
 
-    private fun getSelectValues() = (if (selectAll) " *"
+    private fun getSelectValues() = if (selectAll) " *"
     else if (columns.size > 0) columns.joinToString(prefix = " ")
-    else " id".ifTrue(database !is PostgreSQL))
+    else " id".ifTrue(database !is PostgreSQL)
 
     fun getSql(): String =
         "SELECT${getSelectValues()} FROM ${table.tableName}" +
@@ -105,12 +105,12 @@ class SelectStatement<E : Entity>(
                     .ifTrue(orderColumns.isNotEmpty()) +
                 when (database) {
                     is PostgreSQL ->
-                        " LIMIT $limit".ifTrue(limit != null) + " OFFSET $offset".ifTrue(offset != null)
+                        " LIMIT $limit".ifTrue(limit != null) + " OFFSET $offset".ifTrue(offset != 0)
                     is SQLite ->
-                        if (offset != null) " LIMIT ${limit ?: -1} OFFSET $offset"
+                        if (offset != 0) " LIMIT ${limit ?: -1} OFFSET $offset"
                         else " LIMIT $limit".ifTrue(limit != null)
                     is MariaDB ->
-                        if (offset != null) " LIMIT ${limit ?: (table.size - offset!!)} OFFSET $offset"
+                        if (offset != 0) " LIMIT ${limit ?: (table.size - offset)} OFFSET $offset"
                         else " LIMIT $limit".ifTrue(limit != null)
                     else -> ""
                 }

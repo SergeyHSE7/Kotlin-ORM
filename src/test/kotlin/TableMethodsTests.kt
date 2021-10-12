@@ -2,7 +2,6 @@ import entities.Address
 import entities.User
 import io.kotest.core.spec.style.scopes.FreeSpecContainerContext
 import io.kotest.matchers.shouldBe
-import sql_type_functions.count
 
 suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
     val usersTable = Table<User>()
@@ -54,6 +53,7 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
 
     "getColumn" {
         usersTable.getColumn(User::username) shouldBe usersTable.getAll().map { it.username }
+        usersTable.getColumn(User::username) { User::username startsWith "S" } shouldBe usersTable.getAll().map { it.username }.filter { it.startsWith('S') }
     }
 
     "aggregateBy" {
@@ -61,11 +61,16 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
     }
 
     "groupAggregate" {
-        val map = Table<Address>().groupAggregate(Address::country, Address::id, ::count)
+        val map = Table<Address>().groupAggregate(Address::country, Address::id, { count() })
         println(map)
         map["USA"] shouldBe 2
 
         Table<Address>().groupCounts(Address::country) shouldBe map
-        Table<Address>().groupAggregate(Address::country, Address::id, ::count) { it eq 2 }.size shouldBe 1
+        Table<Address>().groupAggregate(Address::country, Address::id, { count() }) { it eq 2 }.size shouldBe 1
+    }
+
+    "asSequence" {
+        usersTable.asSequence(2).filter { it.username.startsWith('S') }.map { it.age }.take(2).toList() shouldBe listOf(22, 67)
+        usersTable.asSequence(2).filter { it.username.startsWith('S') }.map { it.age }.take(4).toList() shouldBe listOf(22, 67, 34)
     }
 }

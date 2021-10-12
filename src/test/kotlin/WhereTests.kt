@@ -16,6 +16,11 @@ suspend inline fun FreeSpecContainerContext.whereTests() {
         usersTable.first { (User::enabled eq false) * (User::username startsWith "S") }?.username shouldBe "Simon"
     }
 
+    "BETWEEN" {
+        usersTable.count { User::age.between(20, 42) } shouldBe 4
+        usersTable.count { User::age.notBetween(20, 42) } shouldBe 2
+    }
+
     "IN" {
         usersTable.all { User::username inColumn User::username } shouldBe true
         usersTable.count { User::username inColumn User::username.where { User::username startsWith "S" } } shouldBe 3

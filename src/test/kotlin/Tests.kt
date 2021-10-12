@@ -46,6 +46,8 @@ class Tests : FreeSpec({
                     this.tables = tables
                 }
             }
+            "SQL Functions" - { sqlFunctionsTests() }
+
             "Table Methods" - { tableMethodsTests() }
 
             "INSERT" - { insertTests() }

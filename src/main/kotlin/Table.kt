@@ -45,6 +45,16 @@ class Table<E : Entity>(
 
     fun isEmpty() = size == 0
 
+    fun asSequence(windowSize: Int = Config.sequenceWindowSize): Sequence<E> = sequence {
+        var iterator: Iterator<E> = take(windowSize).iterator()
+        var count = 0
+
+        while (iterator.hasNext()) {
+            yieldAll(iterator)
+            iterator = selectAll().limit(windowSize).offset(++count * windowSize).getEntities().iterator()
+        }
+    }
+
     fun createTable() {
         if (tableName in database.reservedKeyWords)
             throw LoggerException("\"$tableName\" is a reserved SQL keyword!")
@@ -122,11 +132,11 @@ class Table<E : Entity>(
         condition: WhereCondition? = null
     ): E = last(loadReferences, condition) ?: defaultValue
 
-    fun take(n: Int, loadReferences: Boolean = Config.loadReferencesByDefault) =
-        selectAll().limit(n).setLazy(!loadReferences).getEntities()
+    fun take(n: Int, loadReferences: Boolean = Config.loadReferencesByDefault, condition: WhereCondition? = null) =
+        selectAll().where(condition).limit(n).setLazy(!loadReferences).getEntities()
 
-    fun takeLast(n: Int, loadReferences: Boolean = Config.loadReferencesByDefault) =
-        selectAll().orderByDescending().limit(n).setLazy(!loadReferences).getEntities()
+    fun takeLast(n: Int, loadReferences: Boolean = Config.loadReferencesByDefault, condition: WhereCondition? = null) =
+        selectAll().where(condition).orderByDescending().limit(n).setLazy(!loadReferences).getEntities()
 
     fun count(condition: WhereCondition): Int = select().aggregateColumn(SqlList("*").count()).where(condition)
         .getResultSet().apply { next() }.getInt(1)
@@ -147,8 +157,8 @@ class Table<E : Entity>(
     operator fun minusAssign(entity: E) = delete(entity)
     fun delete(entity: E): Unit = deleteById(entity.id)
 
-    fun <T : Any, P : T?> getColumn(prop: KMutableProperty1<E, P>): List<T> =
-        select(prop).getEntities().mapNotNull(prop)
+    fun <T : Any, P : T?> getColumn(prop: KMutableProperty1<E, P>, condition: WhereCondition? = null): List<T> =
+        select(prop).where(condition).getEntities().mapNotNull(prop)
 
     fun <T : Number?> aggregateBy(prop: KMutableProperty1<E, T>, func: SqlList.() -> SqlNumber): Int =
         select().aggregateColumn(func(SqlList(prop.column.name))).getResultSet().apply { next() }.getInt(1)

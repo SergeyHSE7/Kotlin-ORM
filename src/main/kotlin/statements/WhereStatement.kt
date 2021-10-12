@@ -2,7 +2,7 @@ package statements
 
 import Entity
 import LoggerException
-import Table
+import SubQuery
 import column
 import database
 import databases.SQLite
@@ -14,12 +14,6 @@ import kotlin.reflect.KMutableProperty1
 
 typealias WhereCondition = WhereStatement.() -> Expression
 
-@JvmInline
-value class SubQuery(val value: String) {
-    constructor(prop: KMutableProperty1<*, *>) : this("(SELECT ${prop.column.fullName} FROM ${prop.column.tableName})")
-
-    override fun toString() = value
-}
 
 class Expression(val value: String = "", private val inverseValue: String = "", val isOR: Boolean = false) {
     operator fun not() = Expression(inverseValue, value)
@@ -37,6 +31,10 @@ class WhereStatement(conditionBody: WhereCondition = { Expression() }) {
     fun getSql(): String =
         if (condition.value.isNotEmpty()) " WHERE ${condition.value.removeSurrounding("(", ")")}" else ""
 
+    fun <E : Entity> KMutableProperty1<E, *>.where(condition: WhereCondition) = SubQuery(this).where(condition)
+    fun <E : Entity, P : Number?> KMutableProperty1<E, P>.aggregate(func: SqlList.() -> SqlNumber) =
+        SubQuery(this).aggregate(func)
+
     infix fun <T : Any?> T.eq(obj: Any?) =
         if (obj == null) Expression(toSql() + " IS NULL", toSql() + " IS NOT NULL")
         else boolOperator(obj, "=", "!=")
@@ -50,41 +48,40 @@ class WhereStatement(conditionBody: WhereCondition = { Expression() }) {
     infix fun <T : Any?> T.lessEq(obj: Any?) = boolOperator(obj, "<=", ">")
     infix fun <T : Any?> T.greaterEq(obj: Any?) = boolOperator(obj, ">=", "<")
 
+    fun <E : Entity, P : V?, V: Any> KMutableProperty1<E, P>.between(start: V, end: V) = Expression(
+        "${toSql()} BETWEEN ${start.toSql()} AND ${end.toSql()}",
+        "${toSql()} NOT BETWEEN ${start.toSql()} AND ${end.toSql()}"
+    )
+    fun <E : Entity, P : V?, V: Any> KMutableProperty1<E, P>.notBetween(start: V, end: V) = !between(start, end)
+
     infix fun <T : Any?> T.like(str: String) = boolOperator(str, "LIKE", "NOT LIKE")
-    infix fun <T : Any?> T.notLike(str: String) = boolOperator(str, "NOT LIKE", "LIKE")
+    infix fun <T : Any?> T.notLike(str: String) = !like(str)
 
     infix fun <T : Any?> T.startsWith(str: String) = like("$str%")
-    infix fun <T : Any?> T.notStartsWith(str: String) = notLike("$str%")
+    infix fun <T : Any?> T.notStartsWith(str: String) = !startsWith(str)
 
     infix fun <T : Any?> T.endsWith(str: String) = like("%$str")
-    infix fun <T : Any?> T.notEndsWith(str: String) = notLike("%$str")
+    infix fun <T : Any?> T.notEndsWith(str: String) = !endsWith(str)
 
     infix fun <T : Any?> T.contains(str: String) = like("%$str%")
-    infix fun <T : Any?> T.notContains(str: String) = notLike("%$str%")
+    infix fun <T : Any?> T.notContains(str: String) = !contains(str)
 
     infix fun <T : Any?> T.match(regex: Regex) = boolOperator(regex.pattern, "~", "!~")
-    infix fun <T : Any?> T.notMatch(regex: Regex) = boolOperator(regex.pattern, "!~", "~")
+    infix fun <T : Any?> T.notMatch(regex: Regex) = !match(regex)
 
     infix fun <T : Any?> T.inList(list: List<T>) =
         if (list.isEmpty()) Expression("FALSE", "TRUE") else boolOperator(list, "IN", "NOT IN")
 
-    infix fun <T : Any?> T.notInList(list: List<T>) =
-        if (list.isEmpty()) Expression("TRUE", "FALSE") else boolOperator(list, "NOT IN", "IN")
+    infix fun <T : Any?> T.notInList(list: List<T>) = !inList(list)
 
-    infix fun <T : Any?, E : Entity> T.inColumn(prop: KMutableProperty1<E, *>) =
-        inColumn(SubQuery(prop))
+    infix fun <T : Any?, E : Entity> T.inColumn(prop: KMutableProperty1<E, *>) = inColumn(SubQuery(prop))
 
-    infix fun <T : Any?, E : Entity> T.notInColumn(prop: KMutableProperty1<E, *>) =
-        notInColumn(SubQuery(prop))
+    infix fun <T : Any?, E : Entity> T.notInColumn(prop: KMutableProperty1<E, *>) = !inColumn(prop)
 
     infix fun <T : Any?> T.inColumn(subQuery: SubQuery) =
         boolOperator(subQuery, "IN", "NOT IN")
 
-    infix fun <T : Any?> T.notInColumn(subQuery: SubQuery) =
-        boolOperator(subQuery, "NOT IN", "IN")
-
-    inline fun <reified E : Entity> KMutableProperty1<E, *>.where(noinline condition: WhereCondition) =
-        SubQuery("(${Table<E>().select(this).where(condition).getSql()})")
+    infix fun <T : Any?> T.notInColumn(subQuery: SubQuery) = !inColumn(subQuery)
 
     fun all(subQuery: SubQuery) =
         if (database is SQLite) throw LoggerException("SQLite doesn't support ALL syntax") else SubQuery("ALL $subQuery")
@@ -96,16 +93,15 @@ class WhereStatement(conditionBody: WhereCondition = { Expression() }) {
     fun <E : Entity> any(prop: KMutableProperty1<E, *>) = any(SubQuery(prop))
 
     fun exists(subQuery: SubQuery) = Expression("EXISTS$subQuery", "NOT EXISTS$subQuery")
-    fun notExists(subQuery: SubQuery) = Expression("NOT EXISTS$subQuery", "EXISTS$subQuery")
+    fun notExists(subQuery: SubQuery) = !exists(subQuery)
 
     fun <E : Entity> exists(prop: KMutableProperty1<E, *>) = exists(SubQuery(prop))
-    fun <E : Entity> notExists(prop: KMutableProperty1<E, *>) = notExists(SubQuery(prop))
+    fun <E : Entity> notExists(prop: KMutableProperty1<E, *>) = !exists(prop)
 
     fun <P : Any, T : KMutableProperty1<*, P?>> T.isNull() =
         Expression(toSql() + " IS NULL", toSql() + " IS NOT NULL")
 
-    fun <P : Any, T : KMutableProperty1<*, P?>> T.isNotNull() =
-        Expression(toSql() + " IS NOT NULL", toSql() + " IS NULL")
+    fun <P : Any, T : KMutableProperty1<*, P?>> T.isNotNull() = !isNull()
 
 
     operator fun Expression.times(expr: Expression): Expression = Expression(

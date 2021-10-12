@@ -26,6 +26,8 @@ object Config {
 
     internal var maxCacheSize: Int = 10
 
+    internal var sequenceWindowSize: Int = 10
+
     internal var refreshTables: Boolean = false
 
     internal var loadReferencesByDefault: Boolean = true
