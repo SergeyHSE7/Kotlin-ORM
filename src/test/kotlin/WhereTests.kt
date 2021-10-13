@@ -5,6 +5,7 @@ import io.kotest.core.spec.style.scopes.FreeSpecContainerContext
 import io.kotest.matchers.shouldBe
 import statements.Expression
 import statements.WhereStatement
+import statements.subQuery
 
 suspend inline fun FreeSpecContainerContext.whereTests() {
     val usersTable = Table<User>()
@@ -23,17 +24,17 @@ suspend inline fun FreeSpecContainerContext.whereTests() {
 
     "IN" {
         usersTable.all { User::username inColumn User::username } shouldBe true
-        usersTable.count { User::username inColumn User::username.where { User::username startsWith "S" } } shouldBe 3
+        usersTable.count { User::username inColumn User::username.subQuery { where { User::username startsWith "S" } } } shouldBe 3
         usersTable.first { User::username notInColumn User::username } shouldBe null
     }
 
     "ALL/ANY" {
         if (database is SQLite) {
             shouldThrowAny { usersTable.first { User::age greaterEq all(User::age) }!!.age }
-            shouldThrowAny { usersTable.count { User::age less any(User::age.where { User::enabled eq false }) } }
+            shouldThrowAny { usersTable.count { User::age less any(User::age.subQuery { where { User::enabled eq false } }) } }
         } else {
             usersTable.first { User::age greaterEq all(User::age) }!!.age shouldBe 67
-            usersTable.count { User::age less any(User::age.where { User::enabled eq false }) } shouldBe 4
+            usersTable.count { User::age less any(User::age.subQuery { where { User::enabled eq false } }) } shouldBe 4
         }
     }
 

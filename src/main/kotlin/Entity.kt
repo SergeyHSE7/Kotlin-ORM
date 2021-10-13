@@ -1,3 +1,4 @@
+import statements.subQuery
 import statements.update
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KClass
@@ -19,16 +20,14 @@ abstract class Entity {
         }
 
     inline fun <reified E : Entity> oneToMany(keyProp: KMutableProperty1<E, *>) =
-        ReadOnlyProperty<Any?, List<E>> { thisRef, _ ->
-            Table<E>().getAll { keyProp eq (thisRef as Entity).id }
-        }
+        ReadOnlyProperty<Any?, List<E>> { _, _ -> Table<E>().getAll { keyProp eq id } }
 
-    inline fun <reified K : Entity, V : Entity?> manyToMany(
+    inline fun <reified K : Entity, reified V : Entity, P : V?> manyToMany(
         keyProp: KMutableProperty1<K, *>,
-        valueProp: KMutableProperty1<K, V>
+        valueProp: KMutableProperty1<K, P>
     ) =
-        ReadOnlyProperty<Any?, List<V>> { thisRef, _ ->
-            Table<K>().getAll { keyProp eq (thisRef as Entity).id }.map { valueProp.get(it) }
+        ReadOnlyProperty<Any?, List<V>> { _, _ ->
+            Table<V>().run { getAll { "$tableName.id" inColumn valueProp.subQuery { where { keyProp eq id } } } }
         }
 }
 
@@ -44,7 +43,7 @@ fun <E : Entity?> E.save(): E? = if (this == null) null else table.add(this) as 
 fun <E : Entity?> List<E>.save(): List<E> =
     firstOrNull()?.let { it.table.add(this.filterNotNull()) as List<E> } ?: listOf()
 
-inline fun <U : E?, reified E: Entity> U.update(vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {
+inline fun <U : E?, reified E : Entity> U.update(vararg props: KMutableProperty1<E, *>, func: E.() -> Unit = {}) {
     if (this == null) return
     func(this)
     Table<E>().update(this, props.toList())

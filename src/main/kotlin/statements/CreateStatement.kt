@@ -21,7 +21,7 @@ private class CreateStatement<in E : Entity>(private val table: Table<E>) {
                 } +
                 table.references.joinToString(",\n\t", prefix = ",\n\t") { it.getForeignKey() }
                     .ifTrue(database is SQLite && table.references.isNotEmpty()) +
-                table.checkConditions.joinToString { ",\nCHECK (${it(WhereStatement())})" } +
+                table.checkConditions.joinToString("") { ",\nCHECK (${it(WhereStatement())})" } +
                 ",\nCONSTRAINT ${table.tableName}_unique_columns UNIQUE (${table.uniqueProps.joinToString { it.column.name }})"
                     .ifTrue(table.uniqueProps.isNotEmpty()) +
                 "\n)"

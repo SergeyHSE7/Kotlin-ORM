@@ -14,7 +14,7 @@ data class User(
     var enabled: Boolean = true,
     var age: Int? = 18
 ) : Entity() {
-    val books: List<Book?> by manyToMany(UserBook::borrower, UserBook::book)
+    val books: List<Book> by manyToMany(UserBook::borrower, UserBook::book)
 }
 
 private val defaultEntities = { listOf(

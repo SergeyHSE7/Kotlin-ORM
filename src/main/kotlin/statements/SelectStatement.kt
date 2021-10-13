@@ -9,6 +9,7 @@ import databases.MariaDB
 import databases.PostgreSQL
 import databases.SQLite
 import org.tinylog.Logger
+import sql_type_functions.SqlList
 import sql_type_functions.SqlNumber
 import utils.getEntity
 import utils.ifTrue
@@ -20,7 +21,15 @@ enum class JoinType {
     Inner, Left
 }
 
-data class OrderColumn(val fullColumnName: String, val isDescending: Boolean = false)
+data class OrderColumn(val fullColumnName: String, val isDescending: Boolean = false) {
+    override fun toString() = fullColumnName + if (isDescending) " DESC" else " ASC"
+}
+
+data class GroupBy(val prop: KMutableProperty1<*, *>, val havingExpr: Expression? = null) {
+    override fun toString() =
+        " GROUP BY ${prop.column.fullName}" + if (havingExpr != null && havingExpr.value.isNotEmpty()) " HAVING $havingExpr" else ""
+
+}
 
 fun <E : Entity> Table<E>.selectAll(): SelectStatement<E> = SelectStatement(this, selectAll = true)
 fun <E : Entity> Table<E>.select(vararg props: KMutableProperty1<*, *>): SelectStatement<E> =
@@ -38,6 +47,7 @@ class SelectStatement<E : Entity>(
     private val joinTables = mutableListOf<String>()
     private val columns = columns.toMutableSet()
     private val orderColumns = mutableSetOf<OrderColumn>()
+    private var groupColumn: GroupBy? = null
     private var whereStatement: WhereStatement = WhereStatement()
 
     fun where(conditionBody: WhereCondition?) =
@@ -59,9 +69,22 @@ class SelectStatement<E : Entity>(
     inline fun <reified E : Entity> crossJoin() = crossJoin(Table<E>())
 
     internal fun aggregateColumn(aggregation: SqlNumber) = this.apply { columns.add(aggregation.toString()) }
+    fun aggregateBy(prop: KMutableProperty1<E, *>, func: SqlList.() -> SqlNumber) =
+        aggregateColumn(func(SqlList(prop.column.fullName)))
 
     fun lazy() = setLazy(true)
     fun setLazy(lazy: Boolean) = this.apply { this.lazy = lazy }
+
+    fun <P : Any?> groupAggregate(
+        prop: KMutableProperty1<E, P>,
+        aggregation: SqlNumber,
+        filter: (WhereStatement.(SqlNumber) -> Expression)? = null
+    ) =
+        this.apply {
+            columns += prop.column.fullName
+            aggregateColumn(aggregation)
+            groupColumn = GroupBy(prop, filter?.let { it(WhereStatement(), aggregation) })
+        }
 
     fun orderBy(vararg props: KMutableProperty1<E, *>) =
         this.apply { orderColumns.addAll(props.map { OrderColumn(it.column.fullName) }) }
@@ -76,6 +99,7 @@ class SelectStatement<E : Entity>(
     fun offset(offset: Int) = this.apply { this.offset = offset }
 
     fun getResultSet(): ResultSet = database.executeQuery(getSql().also { Logger.tag("SELECT").info { it } })
+    fun <T> getSingleValue(): T = getResultSet().apply { next() }.getObject(1) as T
 
     val size: Int
         get() = getResultSet().map {}.size
@@ -99,10 +123,9 @@ class SelectStatement<E : Entity>(
     fun getSql(): String =
         "SELECT${getSelectValues()} FROM ${table.tableName}" +
                 joinTables.joinToString("") +
+                (if (groupColumn != null) groupColumn else "") +
                 whereStatement.getSql() +
-                (" ORDER BY " + orderColumns.joinToString
-                { it.fullColumnName + if (it.isDescending) " DESC" else " ASC" })
-                    .ifTrue(orderColumns.isNotEmpty()) +
+                (" ORDER BY " + orderColumns.joinToString()).ifTrue(orderColumns.isNotEmpty()) +
                 when (database) {
                     is PostgreSQL ->
                         " LIMIT $limit".ifTrue(limit != null) + " OFFSET $offset".ifTrue(offset != 0)
@@ -114,7 +137,6 @@ class SelectStatement<E : Entity>(
                         else " LIMIT $limit".ifTrue(limit != null)
                     else -> ""
                 }
-
 
 }
 

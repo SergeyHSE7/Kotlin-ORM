@@ -1,7 +1,6 @@
 @file:Suppress("UNCHECKED_CAST")
 
 import databases.Database
-import org.tinylog.Logger
 import sql_type_functions.SqlList
 import sql_type_functions.SqlNumber
 import statements.*
@@ -41,7 +40,7 @@ class Table<E : Entity>(
 
 
     val size: Int
-        get() = select().aggregateColumn(SqlList("*").count()).getResultSet().apply { next() }.getInt(1)
+        get() = select().aggregateColumn(SqlList("*").count()).getSingleValue()
 
     fun isEmpty() = size == 0
 
@@ -139,11 +138,10 @@ class Table<E : Entity>(
         selectAll().where(condition).orderByDescending().limit(n).setLazy(!loadReferences).getEntities()
 
     fun count(condition: WhereCondition): Int = select().aggregateColumn(SqlList("*").count()).where(condition)
-        .getResultSet().apply { next() }.getInt(1)
+        .getSingleValue()
 
     fun countNotNull(prop: KMutableProperty1<E, *>): Int =
-        select().aggregateColumn(SqlList(prop.column.fullName).count())
-            .getResultSet().apply { next() }.getInt(1)
+        select().aggregateColumn(SqlList(prop.column.fullName).count()).getSingleValue()
 
 
     operator fun set(id: Int, entity: E) = update(entity) { this.id = id }
@@ -161,39 +159,26 @@ class Table<E : Entity>(
         select(prop).where(condition).getEntities().mapNotNull(prop)
 
     fun <T : Number?> aggregateBy(prop: KMutableProperty1<E, T>, func: SqlList.() -> SqlNumber): Int =
-        select().aggregateColumn(func(SqlList(prop.column.name))).getResultSet().apply { next() }.getInt(1)
+        select().aggregateBy(prop, func).getSingleValue()
+
+    fun <G : Any?> groupAggregate(
+        groupBy: KMutableProperty1<E, G>,
+        aggregateBy: SqlNumber = SqlList("*").count(),
+        filter: (WhereStatement.(SqlNumber) -> Expression)? = null
+    ): Map<G, Int> {
+        val map = mutableMapOf<G, Int>()
+        select().groupAggregate(groupBy, aggregateBy, filter)
+            .getResultSet().map { map[groupBy.column.getValueByIndex(this, 1) as G] = getInt(2) }
+        return map
+    }
 
     fun <T : Number?, G : Any?> groupAggregate(
         groupBy: KMutableProperty1<E, G>,
         aggregateBy: KMutableProperty1<E, T>,
         aggregateFunc: SqlList.() -> SqlNumber,
         filter: (WhereStatement.(SqlNumber) -> Expression)? = null
-    ): Map<G, Int> {
-        val sqlNumber = aggregateFunc(SqlList(aggregateBy.column.name))
-        val sql = select(groupBy).aggregateColumn(sqlNumber).getSql() +
-                " GROUP BY ${groupBy.column.name}" +
-                if (filter != null) " HAVING ${WhereStatement().filter(sqlNumber)}" else ""
-        val map = mutableMapOf<G, Int>()
-        database.executeQuery(sql.also { Logger.tag("SELECT").info { it } }).map {
-            map[groupBy.column.getValueByIndex(this, 1) as G] = getInt(2)
-        }
-        return map
-    }
+    ): Map<G, Int> = groupAggregate(groupBy, aggregateFunc(SqlList(aggregateBy.column.fullName)), filter)
 
-    fun <G : Any?> groupCounts(
-        groupBy: KMutableProperty1<E, G>,
-        filter: (WhereStatement.(SqlNumber) -> Expression)? = null
-    ): Map<G, Int> {
-        val sqlNumber = SqlList("*").count()
-        val sql = select(groupBy).aggregateColumn(sqlNumber).getSql() +
-                " GROUP BY ${groupBy.column.name}" +
-                if (filter != null) " HAVING ${WhereStatement().filter(sqlNumber)}" else ""
-        val map = mutableMapOf<G, Int>()
-        database.executeQuery(sql.also { Logger.tag("SELECT").info { it } }).map {
-            map[groupBy.column.getValueByIndex(this, 1) as G] = getInt(2)
-        }
-        return map
-    }
 
     fun all(condition: WhereCondition): Boolean = !any { !condition(this) }
     fun any(condition: WhereCondition): Boolean = select().where(condition).limit(1).lazy().getResultSet().next()

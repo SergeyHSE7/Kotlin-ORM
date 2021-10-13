@@ -11,7 +11,7 @@ data class Address(
     var country: String = "",
     var city: String = "",
 ) : Entity() {
-    val users: List<User?> by oneToMany(User::address)
+    val users: List<User> by oneToMany(User::address)
 }
 
 private val defaultEntities = { listOf(
