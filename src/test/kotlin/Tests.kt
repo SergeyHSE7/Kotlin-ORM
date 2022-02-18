@@ -5,16 +5,6 @@ import entities.*
 import io.kotest.core.spec.style.FreeSpec
 
 class Tests : FreeSpec({
-    val tables = {
-        listOf(
-            UserBooksTable,
-            UsersTable,
-            AddressesTable,
-            BooksTable,
-            TestTable
-        )
-    }
-
     val databases = listOf(
         PostgreSQL(
             url = System.getenv("postgresql_url"),
@@ -43,7 +33,7 @@ class Tests : FreeSpec({
             "Generate tables" {
                 config {
                     this.database = database
-                    this.tables = tables
+                    setTables(::UserBooksTable, ::UsersTable, ::AddressesTable, ::BooksTable, ::TestTable)
                 }
             }
             "SQL Functions" - { sqlFunctionsTests() }

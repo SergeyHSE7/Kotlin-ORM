@@ -22,7 +22,7 @@ enum class Action {
 }
 
 
-class Table<E : Entity>(
+open class Table<E : Entity>(
     val entityClass: KClass<E>,
     private val columnsBody: Database.() -> Unit
 ) {
@@ -94,6 +94,8 @@ class Table<E : Entity>(
 
 
     operator fun get(id: Int): E? = findById(id)
+    operator fun <T : Any?> get(column: KMutableProperty1<E, T>): List<T> = getColumn(column)
+
     operator fun contains(entity: E): Boolean = select().apply {
         entity.properties.forEach { prop ->
             if (prop.name != "id")
@@ -131,6 +133,18 @@ class Table<E : Entity>(
         condition: WhereCondition? = null
     ): E = last(loadReferences, condition) ?: defaultValue
 
+    fun <P : Number?> maxBy(
+        prop: KMutableProperty1<E, P>,
+        loadReferences: Boolean = Config.loadReferencesByDefault
+    ): E? =
+        selectAll().orderByDescending(prop).limit(1).setLazy(!loadReferences).getEntity()
+
+    fun <P : Number?> minBy(
+        prop: KMutableProperty1<E, P>,
+        loadReferences: Boolean = Config.loadReferencesByDefault
+    ): E? =
+        selectAll().orderBy(prop).limit(1).setLazy(!loadReferences).getEntity()
+
     fun take(n: Int, loadReferences: Boolean = Config.loadReferencesByDefault, condition: WhereCondition? = null) =
         selectAll().where(condition).limit(n).setLazy(!loadReferences).getEntities()
 
@@ -161,14 +175,13 @@ class Table<E : Entity>(
     fun <T : Number?> aggregateBy(prop: KMutableProperty1<E, T>, func: SqlList.() -> SqlNumber): Int =
         select().aggregateBy(prop, func).getSingleValue()
 
-    fun <G : Any?> groupAggregate(
+    fun <G : Any?> groupCounts(
         groupBy: KMutableProperty1<E, G>,
-        aggregateBy: SqlNumber = SqlList("*").count(),
         filter: (WhereStatement.(SqlNumber) -> Expression)? = null
     ): Map<G, Int> {
         val map = mutableMapOf<G, Int>()
-        select().groupAggregate(groupBy, aggregateBy, filter)
-            .getResultSet().map { map[groupBy.column.getValueByIndex(this, 1) as G] = getInt(2) }
+        select().groupAggregate(groupBy, SqlList("*").count(), filter)
+            .getResultSet().map { map[groupBy.column.getValueByIndex(this, 2) as G] = getInt(1) }
         return map
     }
 
@@ -177,7 +190,12 @@ class Table<E : Entity>(
         aggregateBy: KMutableProperty1<E, T>,
         aggregateFunc: SqlList.() -> SqlNumber,
         filter: (WhereStatement.(SqlNumber) -> Expression)? = null
-    ): Map<G, Int> = groupAggregate(groupBy, aggregateFunc(SqlList(aggregateBy.column.fullName)), filter)
+    ): Map<G, Int> {
+        val map = mutableMapOf<G, Int>()
+        select().groupAggregate(groupBy, aggregateBy, aggregateFunc, filter)
+            .getResultSet().map { map[groupBy.column.getValueByIndex(this, 2) as G] = getInt(1) }
+        return map
+    }
 
 
     fun all(condition: WhereCondition): Boolean = !any { !condition(this) }

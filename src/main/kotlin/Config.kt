@@ -13,7 +13,7 @@ fun config(func: Config.() -> Unit): Unit = Config.apply(func).run {
     val loadRefs = alwaysLoadReferencesWhenAddingEntity
     alwaysLoadReferencesWhenAddingEntity = false
     with(tables()) {
-        forEach { it.createTable() }
+        forEach(Table<*>::createTable)
         forEach { it.defaultEntities.save() }
         forEach { it.referencesAddMethods.forEach { it() } }
     }
@@ -35,6 +35,10 @@ object Config {
     internal var alwaysLoadReferencesWhenAddingEntity: Boolean = true
 
     internal var tables: () -> List<Table<*>> = { listOf() }
+
+    fun setTables(vararg tables: () -> Table<*>) {
+        this.tables = { tables.map { it() } }
+    }
 
     internal var jsonFormat: JsonBuilder.() -> Unit = { }
 

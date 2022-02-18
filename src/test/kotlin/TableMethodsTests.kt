@@ -2,6 +2,7 @@ import entities.Address
 import entities.User
 import io.kotest.core.spec.style.scopes.FreeSpecContainerContext
 import io.kotest.matchers.shouldBe
+import sql_type_functions.SqlList
 
 suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
     val usersTable = Table<User>()
@@ -34,6 +35,11 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
         usersTable.lastOrDefault(User(username = "Default")) { User::address eq 8 }.username shouldBe "Default"
     }
 
+    "maxBy/minBy" {
+        usersTable.maxBy(User::age)?.username shouldBe "Sergey"
+        usersTable.minBy(User::age)?.username shouldBe "Kevin"
+    }
+
     "contains" {
         (defaultUsers[2] in usersTable) shouldBe true
         (defaultUsers in usersTable) shouldBe true
@@ -52,20 +58,21 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
     }
 
     "getColumn" {
-        usersTable.getColumn(User::username) shouldBe usersTable.getAll().map { it.username }
-        usersTable.getColumn(User::username) { User::username startsWith "S" } shouldBe usersTable.getAll().map { it.username }.filter { it.startsWith('S') }
+        usersTable[User::username] shouldBe usersTable.getAll().map(User::username)
+        usersTable.getColumn(User::username) { User::username startsWith "S" } shouldBe usersTable.getAll().map(User::username).filter { it.startsWith('S') }
     }
 
     "aggregateBy" {
-        usersTable.aggregateBy(User::age) { sum() } shouldBe usersTable.getColumn(User::age).sum()
+        usersTable.aggregateBy(User::age, SqlList::sum) shouldBe usersTable.getColumn(User::age).sum()
     }
 
     "groupAggregate" {
-        val map = Table<Address>().groupAggregate(Address::country, Address::id, { count() })
+        //val map = Table<Address>().groupAggregate(Address::country, Address::id, { count() })
+        val map = Table<Address>().groupAggregate(Address::country, Address::id, SqlList::count)
         println(map)
         map["USA"] shouldBe 2
 
-        Table<Address>().groupAggregate(Address::country) shouldBe map
+        Table<Address>().groupCounts(Address::country) shouldBe map
         Table<Address>().groupAggregate(Address::country, Address::id, { count() }) { it eq 2 }.size shouldBe 1
     }
 

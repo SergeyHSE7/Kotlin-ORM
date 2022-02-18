@@ -14,15 +14,15 @@ data class Address(
     val users: List<User> by oneToMany(User::address)
 }
 
-private val defaultEntities = { listOf(
+private val defaultEntities = listOf(
     Address(country = "USA", city = "New York"),
     Address(country = "France", city = "Paris"),
     Address(country = "Italy", city = "Rome"),
     Address(country = "USA", city = "Seattle"),
     Address(country = "Russia", city = "Moscow"),
-)}
+)
 
 val AddressesTable = table<Address, Database> {
-    defaultEntities(defaultEntities)
+    defaultEntities(::defaultEntities)
     uniqueColumns(Address::city, Address::country)
 }

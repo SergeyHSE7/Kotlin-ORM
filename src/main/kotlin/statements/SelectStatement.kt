@@ -68,7 +68,11 @@ class SelectStatement<E : Entity>(
     fun crossJoin(joinTable: Table<*>) = this.apply { joinTables.add(" CROSS JOIN ${joinTable.tableName}") }
     inline fun <reified E : Entity> crossJoin() = crossJoin(Table<E>())
 
-    internal fun aggregateColumn(aggregation: SqlNumber) = this.apply { columns.add(aggregation.toString()) }
+    internal fun aggregateColumn(aggregation: SqlNumber) = this.apply {
+        columns.clear()
+        columns += aggregation.toString()
+    }
+
     fun aggregateBy(prop: KMutableProperty1<E, *>, func: SqlList.() -> SqlNumber) =
         aggregateColumn(func(SqlList(prop.column.fullName)))
 
@@ -81,10 +85,17 @@ class SelectStatement<E : Entity>(
         filter: (WhereStatement.(SqlNumber) -> Expression)? = null
     ) =
         this.apply {
-            columns += prop.column.fullName
             aggregateColumn(aggregation)
+            columns += prop.column.fullName
             groupColumn = GroupBy(prop, filter?.let { it(WhereStatement(), aggregation) })
         }
+
+    fun <T : Number?, G : Any?> groupAggregate(
+        groupBy: KMutableProperty1<E, G>,
+        aggregateBy: KMutableProperty1<E, T>,
+        aggregateFunc: SqlList.() -> SqlNumber,
+        filter: (WhereStatement.(SqlNumber) -> Expression)? = null
+    ) = groupAggregate(groupBy, aggregateFunc(SqlList(aggregateBy.column.fullName)), filter)
 
     fun orderBy(vararg props: KMutableProperty1<E, *>) =
         this.apply { orderColumns.addAll(props.map { OrderColumn(it.column.fullName) }) }

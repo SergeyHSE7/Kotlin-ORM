@@ -16,17 +16,17 @@ repositories {
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
 
-    implementation("org.postgresql:postgresql:42.2.10")
-    implementation("org.xerial:sqlite-jdbc:3.36.0.1")
+    implementation("org.postgresql:postgresql:42.3.2")
+    implementation("org.xerial:sqlite-jdbc:3.36.0.2")
     implementation("org.mariadb.jdbc:mariadb-java-client:2.7.4")
 
     implementation("org.atteo:evo-inflector:1.3")
-    implementation("org.tinylog:tinylog-api:2.4.0-M1")
-    implementation("org.tinylog:tinylog-impl:2.4.0-M1")
+    implementation("org.tinylog:tinylog-api:2.4.1")
+    implementation("org.tinylog:tinylog-impl:2.4.1")
 
-    testImplementation("io.kotest:kotest-runner-junit5:4.6.0")
+    testImplementation("io.kotest:kotest-runner-junit5:4.6.0") // Do not upgrade
 }
 
 tasks.withType<KotlinCompile>() {

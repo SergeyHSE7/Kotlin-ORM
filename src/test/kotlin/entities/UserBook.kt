@@ -14,7 +14,7 @@ data class UserBook(
     var returnDate: Date = Date(0),
 ) : Entity()
 
-private val defaultEntities = {
+private val defaultEntities =
     listOf(
         UserBook(
             borrower = User(1),
@@ -41,11 +41,11 @@ private val defaultEntities = {
             returnDate = Date.valueOf("2021-03-05")
         ),
     )
-}
+
 
 val UserBooksTable = table<UserBook, Database> {
     reference(UserBook::borrower, Action.Cascade)
     reference(UserBook::book, Action.Cascade)
 
-    defaultEntities(defaultEntities)
+    defaultEntities(::defaultEntities)
 }
