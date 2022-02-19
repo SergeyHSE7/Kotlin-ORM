@@ -24,6 +24,10 @@ fun config(func: Config.() -> Unit): Unit = Config.apply(func).run {
 object Config {
     internal var database: Database? = null
 
+    internal var connectionAttemptsAmount: Int = 3
+
+    internal var connectionAttemptsDelay: Long = 3000
+
     internal var maxCacheSize: Int = 10
 
     internal var sequenceWindowSize: Int = 10

@@ -2,6 +2,7 @@ package databases
 
 import Action
 import Column
+import Config
 import Entity
 import Reference
 import Table
@@ -9,6 +10,7 @@ import org.tinylog.Logger
 import statements.Expression
 import statements.WhereCondition
 import statements.WhereStatement
+import java.lang.Thread.sleep
 import java.sql.*
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
@@ -19,7 +21,15 @@ sealed class Database(
     password: String? = null,
     driver: String = "org.postgresql.Driver",
 ) {
-    internal val connection: Connection = DriverManager.getConnection(url, user, password)
+    internal val connection: Connection = run {
+        var count = 0
+        while (count++ < Config.connectionAttemptsAmount) {
+            runCatching { DriverManager.getConnection(url, user, password) }.onSuccess { return@run it }
+            sleep(Config.connectionAttemptsDelay)
+        }
+        throw Exception("Can't get connection  after $count attempts")
+    }
+
     private val openedStatements = mutableListOf<Statement>()
     private val newStatement: Statement
         get() = connection.createStatement().also { openedStatements.add(it) }

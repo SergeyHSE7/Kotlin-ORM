@@ -38,5 +38,37 @@ application {
 }
 
 tasks.withType<Test> {
+    dependsOn("createPostgresDB", "createMariaDB")
     useJUnitPlatform()
+    finalizedBy("deletePostgresDB", "deleteMariaDB")
+}
+
+task<Exec>("createPostgresDB") {
+    commandLine(
+        ("docker run --name test_postgres " +
+                "-p 5432:5432 -d " +
+                "-e POSTGRES_USER=user " +
+                "-e POSTGRES_PASSWORD=password " +
+                "-e POSTGRES_DB=test_db " +
+                "postgres").split(' ')
+    )
+}
+
+task<Exec>("createMariaDB") {
+    commandLine(
+        ("docker run --name test_mariadb " +
+                "-p 3306:3306 -d " +
+                "-e MARIADB_USER=user " +
+                "-e MARIADB_PASSWORD=password " +
+                "-e MARIADB_ROOT_PASSWORD=password " +
+                "-e MARIADB_DATABASE=test_db " +
+                "mariadb").split(' ')
+    )
+}
+
+task<Exec>("deletePostgresDB") {
+    commandLine("docker rm -f test_postgres".split(' '))
+}
+task<Exec>("deleteMariaDB") {
+    commandLine("docker rm -f test_mariadb".split(' '))
 }

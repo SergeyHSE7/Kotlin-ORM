@@ -6,17 +6,9 @@ import io.kotest.core.spec.style.FreeSpec
 
 class Tests : FreeSpec({
     val databases = listOf(
-        PostgreSQL(
-            url = System.getenv("postgresql_url"),
-            user = System.getenv("postgresql_user"),
-            password = System.getenv("postgresql_password")
-        ),
+        PostgreSQL(url = "jdbc:postgresql://localhost:5432/test_db", user = "user", password = "password"),
         SQLite(url = System.getenv("sqlite_url")),
-        MariaDB(
-            url = System.getenv("mariadb_url"),
-            user = System.getenv("mariadb_user"),
-            password = System.getenv("mariadb_password")
-        )
+        MariaDB(url = "jdbc:mariadb://localhost:3306/test_db", user = "root", password = "password")
     )
 
     config {
