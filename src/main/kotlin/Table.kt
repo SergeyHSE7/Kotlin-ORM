@@ -31,8 +31,8 @@ open class Table<E : Entity>(
     val defaultEntities by lazy { defaultEntitiesMethod() }
     var defaultEntitiesMethod: () -> List<E> = { listOf() }
 
-    internal val columns = mutableListOf<Column<E, *>>()
-    internal val references = mutableListOf<Reference<E, *>>()
+    internal val columns = mutableSetOf<Column<E, *>>()
+    internal val references = mutableSetOf<Reference<E, *>>()
     val uniqueProps = mutableSetOf<KMutableProperty1<E, *>>()
     internal val referencesAddMethods: MutableSet<() -> Unit> = mutableSetOf()
     internal val defaultEntity: E = entityClass.createInstance()
@@ -111,7 +111,7 @@ open class Table<E : Entity>(
         selectAll().where(condition).setLazy(!loadReferences).getEntities()
 
     fun findById(id: Int, loadReferences: Boolean = Config.loadReferencesByDefault): E? =
-        cache[id, loadReferences] ?: first(loadReferences) { "id" eq id }
+        cache[id, loadReferences] ?: first(loadReferences) { "$tableName.id" eq id }
 
     fun findIdOf(condition: WhereCondition): Int? = SelectStatement(this, listOf("id")).where(condition).getEntity()?.id
 
@@ -181,7 +181,7 @@ open class Table<E : Entity>(
     ): Map<G, Int> {
         val map = mutableMapOf<G, Int>()
         select().groupAggregate(groupBy, SqlList("*").count(), filter)
-            .getResultSet().map { map[groupBy.column.getValueByIndex(this, 2) as G] = getInt(1) }
+            .getResultSet().map { map[groupBy.column.getValue(this, 2) as G] = getInt(1) }
         return map
     }
 
@@ -193,7 +193,7 @@ open class Table<E : Entity>(
     ): Map<G, Int> {
         val map = mutableMapOf<G, Int>()
         select().groupAggregate(groupBy, aggregateBy, aggregateFunc, filter)
-            .getResultSet().map { map[groupBy.column.getValueByIndex(this, 2) as G] = getInt(1) }
+            .getResultSet().map { map[groupBy.column.getValue(this, 2) as G] = getInt(1) }
         return map
     }
 

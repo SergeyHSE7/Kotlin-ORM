@@ -44,7 +44,7 @@ class SelectStatement<E : Entity>(
     private var lazy: Boolean = !Config.loadReferencesByDefault
     private var limit: Int? = null
     private var offset: Int = 0
-    private val joinTables = mutableListOf<String>()
+    private val joinTables = mutableSetOf<String>()
     private val columns = columns.toMutableSet()
     private val orderColumns = mutableSetOf<OrderColumn>()
     private var groupColumn: GroupBy? = null
@@ -115,17 +115,28 @@ class SelectStatement<E : Entity>(
     val size: Int
         get() = getResultSet().map {}.size
 
-    fun getEntity(): E? = getResultSet()
-        .run { if (next()) getEntity(table, lazy) else null }
-        .also {
-            if (selectAll && it != null) table.cache.add(it, !lazy)
-        }
+    fun getEntity(): E? {
+        if (!lazy) table.columns.filter { (selectAll || it.name in columns) && it.refTable != null }
+            .forEach { join(it.refTable!!, JoinType.Left) { "${it.refTable!!.tableName}.id" eq it.property } }
 
-    fun getEntities(): List<E> = getResultSet()
-        .map { getEntity(table, lazy) }
-        .also {
-            if (selectAll) table.cache.addAll(it, !lazy)
-        }
+        return getResultSet()
+            .run { if (next()) getEntity(table, lazy) else null }
+            .also {
+                if (selectAll && it != null) table.cache.add(it, !lazy)
+            }
+    }
+
+    fun getEntities(): List<E> {
+        if (!lazy) table.columns.filter { (selectAll || it.name in columns) && it.refTable != null }
+            .forEach { join(it.refTable!!, JoinType.Left) { "${it.refTable!!.tableName}.id" eq it.property } }
+
+        return getResultSet()
+            .map { getEntity(table, lazy) }
+            .also {
+                if (selectAll) table.cache.addAll(it, !lazy)
+            }
+    }
+
 
     private fun getSelectValues() = if (selectAll) " *"
     else if (columns.size > 0) columns.joinToString(prefix = " ")

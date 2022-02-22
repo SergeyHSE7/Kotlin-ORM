@@ -8,23 +8,30 @@ import kotlin.reflect.full.createInstance
 
 fun <E : Entity> ResultSet.getEntity(table: Table<E>, lazy: Boolean): E {
     val entity: E = table.entityClass.createInstance()
-    val availableColumns = with(metaData) { (1..columnCount).map { getColumnName(it) } }
-    table.columns.filter { it.name in availableColumns }.forEach { setProp(entity, it, lazy) }
+    val columnNames = table.columns.map { it.name }.toHashSet()
+    with(metaData) {
+        (1..columnCount)
+            .filter { getTableName(it) == table.tableName && getColumnName(it) in columnNames }
+            .forEach { colIndex ->
+                setProp(entity, table.columns.first { it.name == getColumnName(colIndex) }, colIndex, lazy)
+            }
+    }
+
     return entity
 }
 
-fun <E : Entity, T> ResultSet.setProp(entity: E, column: Column<E, T>, lazy: Boolean) {
+fun <E : Entity, T> ResultSet.setProp(entity: E, column: Column<E, T>, columnIndex: Int, lazy: Boolean) {
     val prop = column.property
 
     if (column.refTable != null) {
-        val index = column.getValue(this, column.name) as? Int ?: return
+        val index = column.getValue(this, columnIndex) as? Int ?: return
 
         val obj = if (lazy) column.refTable!!.entityClass.createInstance().apply { id = index }
-        else column.refTable!!.findById(index, false)
+        else getEntity(column.refTable!!, false)
 
         @Suppress("UNCHECKED_CAST")
         prop.set(entity, obj as T)
-    } else prop.set(entity, column.getValue(this, column.name))
+    } else prop.set(entity, column.getValue(this, columnIndex))
 }
 
 

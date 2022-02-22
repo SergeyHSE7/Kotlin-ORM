@@ -73,10 +73,7 @@ open class Column<E : Entity, T>(
     private var isPrimaryKey = false
     private val checkConditions = table.checkConditions
 
-    internal val getValue: (rs: ResultSet, name: String) -> T = sqlType.customGetValue ?: { rs, name ->
-        getValueByIndex(rs, rs.findColumn(name)) }
-
-    internal val getValueByIndex: (rs: ResultSet, index: Int) -> T = { rs, index ->
+    internal val getValue: (rs: ResultSet, index: Int) -> T = sqlType.customGetValue ?: { rs, index ->
         when {
             property.isTypeOf(floatType) -> rs.getFloat(index)
             property.isTypeOf(int2Type) -> rs.getShort(index)
