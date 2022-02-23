@@ -6,6 +6,7 @@ plugins {
     kotlin("jvm") version "1.5.21"
     kotlin("plugin.serialization") version "1.5.21"
 }
+apply(plugin = "maven-publish")
 
 group = "com.github.SergeyHSE7"
 version = "1.0-SNAPSHOT"
