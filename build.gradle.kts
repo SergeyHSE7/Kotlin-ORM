@@ -1,12 +1,13 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    `maven-publish`
     application
     kotlin("jvm") version "1.5.21"
     kotlin("plugin.serialization") version "1.5.21"
 }
 
-group = "me.sergey"
+group = "com.github.SergeyHSE7"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -33,8 +34,12 @@ tasks.withType<KotlinCompile>() {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-application {
-    mainClassName = "MainKt"
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
 }
 
 tasks.withType<Test> {
