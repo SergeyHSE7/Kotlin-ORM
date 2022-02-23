@@ -10,18 +10,18 @@ class SqlDate(value: String) : SqlBase(value) {
     companion object {
         fun nowWithMs() = SqlDate(
             when (database) {
-                is SQLite -> "STRFTIME('%Y-%m-%d %H:%M:%f', 'now')"
+                is SQLite -> "(STRFTIME('%Y-%m-%d %H:%M:%f', 'now'))"
                 is MariaDB -> "now(3)"
-                is PostgreSQL -> "now() at time zone 'utc'"
+                is PostgreSQL -> "(now() at time zone 'utc')"
                 else -> "now()"
             }
         )
 
         fun now() = SqlDate(
             when (database) {
-                is SQLite -> "datetime('now')"
+                is SQLite -> "(datetime('now'))"
                 is MariaDB -> "now()"
-                is PostgreSQL -> "now() at time zone 'utc'"
+                is PostgreSQL -> "(now() at time zone 'utc')"
                 else -> "now()"
             }
         )

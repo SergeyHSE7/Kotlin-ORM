@@ -12,14 +12,14 @@ suspend inline fun FreeSpecContainerContext.jsonPrintTests() {
 
     "toJson" {
         val jsonUser = user.toJson()
-        jsonUser shouldBe """{"id":1,"username":"Kevin","address":{"id":1,"country":"USA","city":"New York"},"enabled":true,"age":18}"""
+        jsonUser shouldBe """{"id":1,"username":"Kevin","address":{"id":1,"country":"USA","city":"Chicago"},"enabled":true,"age":18}"""
         user shouldBe json.decodeFromString<User>(jsonUser)
         // println(json.decodeFromString<List<User>>(usersTable.getAll().toJson()))
     }
 
     "toJsonOnly" {
         val jsonUser = user.toJsonOnly(User::username, User::address)
-        jsonUser shouldBe """{"username":"Kevin","address":{"id":1,"country":"USA","city":"New York"}}"""
+        jsonUser shouldBe """{"username":"Kevin","address":{"id":1,"country":"USA","city":"Chicago"}}"""
         User(username = user.username, address = user.address) shouldBe json.decodeFromString<User>(jsonUser)
     }
 

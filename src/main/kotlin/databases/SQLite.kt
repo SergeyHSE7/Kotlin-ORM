@@ -9,6 +9,9 @@ import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.HashMap
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 
@@ -34,6 +37,14 @@ class SQLite(
         dateType to SqlType<Date>("text",
             customGetValue = { rs, name -> Date.valueOf(rs.getString(name)) },
             customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
+        calendarType to SqlType<Calendar>("text",
+            customGetValue = { rs, name ->
+                Calendar.getInstance()
+                    .apply { time = SimpleDateFormat("YYYY-MM-dd HH:mm:ss.SSS").parse(rs.getString(name)) }
+            },
+            customSetValue = { ps, index, value ->
+                ps.setString(index, SimpleDateFormat("YYYY-MM-dd HH:mm:ss.SSS").format(value.time))
+            }),
         timeType to SqlType<Time>("text",
             customGetValue = { rs, name -> Time.valueOf(rs.getString(name)) },
             customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),

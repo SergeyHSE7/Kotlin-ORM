@@ -3,8 +3,10 @@ package entities
 import Action
 import Entity
 import databases.Database
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import table
+import java.util.*
 
 @Serializable
 data class User(
@@ -12,7 +14,8 @@ data class User(
     var username: String = "",
     var address: Address? = null,
     var enabled: Boolean = true,
-    var age: Int? = 18
+    var age: Int? = 18,
+    //@Contextual var lastVisitDate: Date? = null
 ) : Entity() {
     val books: List<Book> by manyToMany(UserBook::borrower, UserBook::book)
 }

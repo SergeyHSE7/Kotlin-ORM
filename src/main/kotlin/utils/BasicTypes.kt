@@ -4,6 +4,7 @@ import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
+import java.util.*
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.createType
@@ -19,6 +20,7 @@ val decimalType = BigDecimal::class.createType()
 val floatType = Float::class.createType()
 val doubleType = Double::class.createType()
 val dateType = Date::class.createType()
+val calendarType = Calendar::class.createType()
 val timeType = Time::class.createType()
 val timestampType = Timestamp::class.createType()
 val stringType = String::class.createType()
@@ -33,6 +35,7 @@ val typeList = listOf(
     floatType,
     doubleType,
     dateType,
+    calendarType,
     timeType,
     timestampType,
     stringType

@@ -5,11 +5,13 @@ import column
 import databases.Database
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import sql_type_functions.SqlDate
 import table
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
+import java.util.*
 
 @Serializable
 data class Test(
@@ -23,6 +25,7 @@ data class Test(
     var doubleValue: Double = 0.0,
     @Contextual var decimalValue: BigDecimal = BigDecimal(0),
     @Contextual var dateValue: Date = Date(0),
+    @Contextual var calendarValue: Calendar = Calendar.getInstance(),
     @Contextual var timeValue: Time = Time(0),
     @Contextual var timestampValue: Timestamp = Timestamp(0),
 
@@ -32,4 +35,5 @@ data class Test(
 
 val TestTable = table<Test, Database> {
     column(Test::uniqueValue).unique()
+    column(Test::calendarValue).sqlDefault(SqlDate.now())
 }

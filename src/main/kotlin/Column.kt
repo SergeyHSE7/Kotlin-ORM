@@ -7,6 +7,7 @@ import org.tinylog.Logger
 import statements.Expression
 import statements.WhereStatement
 import statements.alter
+import sql_type_functions.SqlBase
 import utils.*
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -67,7 +68,7 @@ open class Column<E : Entity, T>(
     val name: String = property.name.transformCase(Case.Camel, Case.Snake)
     val tableName: String = table.tableName
     val fullName: String = "$tableName.$name"
-    private var defaultValue: T? = property.get(table.defaultEntity)
+    private var defaultValue: String? = property.get(table.defaultEntity).toSql()
     private var isNotNull = false
     private var isUnique = false
     private var isPrimaryKey = false
@@ -104,14 +105,15 @@ open class Column<E : Entity, T>(
 
     fun unique() = this.also { isUnique = true }
     internal fun primaryKey() = this.also { isPrimaryKey = true }
-    fun default(value: T) = this.also { defaultValue = value }
+    fun default(value: T) = this.also { defaultValue = value.toSql() }
+    fun <S:SqlBase> sqlDefault(sqlValue: S) = this.also { defaultValue = sqlValue.toSql() }
     fun check(condition: WhereStatement.(KMutableProperty1<E, T>) -> Expression) =
         this.also { checkConditions.add { condition(property) } }
 
     protected open fun attributesToSql(): String = "PRIMARY KEY ".ifTrue(isPrimaryKey) +
             "NOT NULL ".ifTrue(isNotNull) +
             "UNIQUE ".ifTrue(isUnique) +
-            "DEFAULT ${defaultValue.toSql()}".ifTrue(!isPrimaryKey && defaultValue != null)
+            "DEFAULT $defaultValue".ifTrue(!isPrimaryKey && defaultValue != null)
 
 
     fun toSql(nameLength: Int = name.length): String =

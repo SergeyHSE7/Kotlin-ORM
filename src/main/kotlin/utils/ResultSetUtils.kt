@@ -27,7 +27,7 @@ fun <E : Entity, T> ResultSet.setProp(entity: E, column: Column<E, T>, columnInd
         val index = column.getValue(this, columnIndex) as? Int ?: return
 
         val obj = if (lazy) column.refTable!!.entityClass.createInstance().apply { id = index }
-        else getEntity(column.refTable!!, false)
+        else getEntity(column.refTable!!, false).also { column.refTable!!.cache.add(it, true) }
 
         @Suppress("UNCHECKED_CAST")
         prop.set(entity, obj as T)

@@ -6,6 +6,8 @@ import org.atteo.evo.inflector.English
 import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.reflect.KMutableProperty1
 
 fun String.ifTrue(flag: Boolean) = if (flag) this else ""
@@ -52,6 +54,7 @@ enum class Case {
 
 
 fun <T : Any?> T.toSql() = when (this) {
+    is Calendar -> "'${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SS").format(time)}'"
     is String, is Date, is Time, is Timestamp -> "'$this'"
     is Entity -> id.toString()
     is List<Any?> -> joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
