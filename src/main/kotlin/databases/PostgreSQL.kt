@@ -5,13 +5,11 @@ import Entity
 import Table
 import column
 import utils.*
-import java.io.File
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
 import java.util.*
-import kotlin.collections.HashMap
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 
@@ -21,7 +19,8 @@ class PostgreSQL(
     password: String,
 ) : Database(url, user, password, "org.postgresql.Driver") {
     override val reservedKeyWords: List<String> =
-        File("src\\main\\kotlin\\databases\\PostgreSQL Reserved Keywords.txt").readText().split(',')
+        "all,analyse,analyze,and,any,array,as,asc,asymmetric,both,case,cast,check,collate,column,constraint,create,current_catalog,current_date,current_role,current_time,current_timestamp,current_user,default,deferrable,desc,distinct,do,else,end,except,false,fetch,for,foreign,from,grant,group,having,in,initially,intersect,into,lateral,leading,limit,localtime,localtimestamp,not,null,offset,on,only,or,order,placing,primary,references,returning,select,session_user,some,symmetric,table,then,to,trailing,true,union,unique,user,using,variadic,when,where,window,with"
+            .split(',')
 
 
     override val defaultTypesMap: HashMap<KType, SqlType<*>> = hashMapOf(
