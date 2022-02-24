@@ -11,7 +11,7 @@ fun <E : Entity> Table<E>.drop() = DropStatement(this).execute().also { cache.cl
 
 private class DropStatement<in E : Entity>(private val table: Table<E>) {
 
-    fun getSql(): String =
+    private fun getSql(): String =
         "DROP TABLE IF EXISTS ${table.tableName}" + " CASCADE".ifTrue(database is PostgreSQL)
 
     fun execute() = database.apply { closeAllStatements() }

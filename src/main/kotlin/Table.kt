@@ -26,8 +26,8 @@ open class Table<E : Entity>(
     val entityClass: KClass<E>,
     private val columnsBody: Database.() -> Unit
 ) {
-    val cache = CacheMap<E>(Config.maxCacheSize)
-    var tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
+    internal val cache = CacheMap<E>(Config.maxCacheSize)
+    val tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
     val defaultEntities by lazy { defaultEntitiesMethod() }
     var defaultEntitiesMethod: () -> List<E> = { listOf() }
 

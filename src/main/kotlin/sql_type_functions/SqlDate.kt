@@ -6,6 +6,7 @@ import databases.PostgreSQL
 import databases.SQLite
 
 class SqlDate(value: String) : SqlBase(value) {
+    fun getFromDB() = database.select(this)
 
     companion object {
         fun nowWithMs() = SqlDate(

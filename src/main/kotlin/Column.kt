@@ -4,17 +4,17 @@ import databases.Database
 import databases.MariaDB
 import databases.PostgreSQL
 import org.tinylog.Logger
+import sql_type_functions.SqlBase
 import statements.Expression
 import statements.WhereStatement
 import statements.alter
-import sql_type_functions.SqlBase
 import utils.*
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.jvm.javaType
 
-val KMutableProperty1<*, *>.column
+internal val KMutableProperty1<*, *>.column
     get() = Column.columns[this]!!
 
 class Reference<E : Entity, P : Entity?>(
@@ -61,13 +61,13 @@ fun <E : Entity, T> Table<E>.column(prop: KMutableProperty1<E, T>): Column<E, *>
 
 open class Column<E : Entity, T>(
     table: Table<E>,
-    val property: KMutableProperty1<E, T>,
+    internal val property: KMutableProperty1<E, T>,
     private val sqlType: Database.SqlType<T>
 ) {
-    val refTable by lazy { Table[(property.returnType.javaType as Class<Entity>).kotlin] }
-    val name: String = property.name.transformCase(Case.Camel, Case.Snake)
-    val tableName: String = table.tableName
-    val fullName: String = "$tableName.$name"
+    internal val refTable by lazy { Table[(property.returnType.javaType as Class<Entity>).kotlin] }
+    internal val name: String = property.name.transformCase(Case.Camel, Case.Snake)
+    internal val tableName: String = table.tableName
+    internal val fullName: String = "$tableName.$name"
     private var defaultValue: String? = property.get(table.defaultEntity).toSql()
     private var isNotNull = false
     private var isUnique = false

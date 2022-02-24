@@ -21,11 +21,11 @@ enum class JoinType {
     Inner, Left
 }
 
-data class OrderColumn(val fullColumnName: String, val isDescending: Boolean = false) {
+internal data class OrderColumn(val fullColumnName: String, val isDescending: Boolean = false) {
     override fun toString() = fullColumnName + if (isDescending) " DESC" else " ASC"
 }
 
-data class GroupBy(val prop: KMutableProperty1<*, *>, val havingExpr: Expression? = null) {
+internal data class GroupBy(val prop: KMutableProperty1<*, *>, val havingExpr: Expression? = null) {
     override fun toString() =
         " GROUP BY ${prop.column.fullName}" + if (havingExpr != null && havingExpr.value.isNotEmpty()) " HAVING $havingExpr" else ""
 
@@ -51,7 +51,7 @@ class SelectStatement<E : Entity>(
     private var whereStatement: WhereStatement = WhereStatement()
 
     fun where(conditionBody: WhereCondition?) =
-        this.apply { if (conditionBody != null) whereStatement = WhereStatement(conditionBody) }
+        this.apply { if (conditionBody != null) whereStatement.addCondition(conditionBody) }
 
     fun join(joinTable: Table<*>, joinType: JoinType = JoinType.Inner, condition: WhereCondition) =
         this.apply { joinTables.add(" ${joinType.name.uppercase()} JOIN ${joinTable.tableName} ON ${WhereStatement().condition()}") }

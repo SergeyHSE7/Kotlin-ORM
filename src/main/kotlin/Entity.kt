@@ -7,8 +7,8 @@ import kotlin.reflect.full.memberProperties
 
 abstract class Entity {
     abstract var id: Int
-    val properties by lazy { this::class.properties }
-    val table: Table<Entity> by lazy {
+    internal val properties by lazy { this::class.properties }
+    internal val table: Table<Entity> by lazy {
         Table[this::class] ?: throw LoggerException("Table for entity ${this::class} is not initialized")
     }
 

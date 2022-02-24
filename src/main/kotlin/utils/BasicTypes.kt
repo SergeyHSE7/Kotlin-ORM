@@ -11,21 +11,21 @@ import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSupertypeOf
 
 
-val boolType = Boolean::class.createType()
-val int1Type = Byte::class.createType()
-val int2Type = Short::class.createType()
-val int4Type = Int::class.createType()
-val int8Type = Long::class.createType()
-val decimalType = BigDecimal::class.createType()
-val floatType = Float::class.createType()
-val doubleType = Double::class.createType()
-val dateType = Date::class.createType()
-val calendarType = Calendar::class.createType()
-val timeType = Time::class.createType()
-val timestampType = Timestamp::class.createType()
-val stringType = String::class.createType()
+internal val boolType = Boolean::class.createType()
+internal val int1Type = Byte::class.createType()
+internal val int2Type = Short::class.createType()
+internal val int4Type = Int::class.createType()
+internal val int8Type = Long::class.createType()
+internal val decimalType = BigDecimal::class.createType()
+internal val floatType = Float::class.createType()
+internal val doubleType = Double::class.createType()
+internal val dateType = Date::class.createType()
+internal val calendarType = Calendar::class.createType()
+internal val timeType = Time::class.createType()
+internal val timestampType = Timestamp::class.createType()
+internal val stringType = String::class.createType()
 
-val typeList = listOf(
+private val typeList = listOf(
     boolType,
     int1Type,
     int2Type,
@@ -42,7 +42,7 @@ val typeList = listOf(
 )
 
 
-val KMutableProperty1<*, *>.type: KType?
-    get() = typeList.firstOrNull { returnType.isSupertypeOf(it) }
+internal val KMutableProperty1<*, *>.type: KType?
+    get() = typeList.firstOrNull(::isTypeOf)
 
 fun KMutableProperty1<*, *>.isTypeOf(type: KType) = returnType.isSupertypeOf(type)

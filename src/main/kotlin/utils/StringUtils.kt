@@ -12,14 +12,14 @@ import kotlin.reflect.KMutableProperty1
 
 fun String.ifTrue(flag: Boolean) = if (flag) this else ""
 
-fun String.transformCase(from: Case, to: Case, toPluralForm: Boolean = false): String {
+internal fun String.transformCase(from: Case, to: Case, toPluralForm: Boolean = false): String {
     val list = splitByCase(from).toMutableList()
     if (toPluralForm)
         list[list.size - 1] = English.plural(list[list.size - 1])
     return list.joinWithCase(to)
 }
 
-fun String.splitByCase(case: Case): List<String> {
+private fun String.splitByCase(case: Case): List<String> {
     val res = mutableListOf<String>()
     var temp = ""
     when (case) {
@@ -37,7 +37,7 @@ fun String.splitByCase(case: Case): List<String> {
     return res.apply { removeIf { it.isEmpty() } }
 }
 
-fun List<String>.joinWithCase(case: Case): String = when (case) {
+private fun List<String>.joinWithCase(case: Case): String = when (case) {
     Case.Normal -> this.fold("") { acc, s -> acc + s.capitalize() + ' ' }.trim()
     Case.Pascal -> this.fold("") { acc, s -> acc + s.capitalize() }
     Case.Camel -> this.reduce { acc, s -> acc + s.capitalize() }
@@ -45,7 +45,7 @@ fun List<String>.joinWithCase(case: Case): String = when (case) {
     Case.Kebab -> this.joinToString("-")
 }
 
-fun String.capitalize(): String =
+private fun String.capitalize(): String =
     replaceFirstChar { it.uppercaseChar() }
 
 enum class Case {

@@ -21,6 +21,7 @@ class Expression(val value: String = "", private val inverseValue: String = "", 
     override fun toString() = value
     override fun equals(other: Any?) = other is Expression && value == other.value
     override fun hashCode() = value.hashCode()
+    fun isEmpty() = value.isEmpty()
 }
 
 data class SubQuery(private val value: String) {
@@ -35,9 +36,14 @@ inline fun <reified E : Entity> KMutableProperty1<E, *>.subQuery(
 
 class WhereStatement(conditionBody: WhereCondition = { Expression() }) {
     private var exprAndFlag = false
-    private val condition = conditionBody()
+    private var condition = conditionBody()
 
-    fun getSql(): String =
+    internal fun addCondition(conditionBody: WhereCondition) {
+        if (condition.isEmpty()) condition = conditionBody()
+        else condition *= conditionBody()
+    }
+
+    internal fun getSql(): String =
         if (condition.value.isNotEmpty()) " WHERE ${condition.value.removeSurrounding("(", ")")}" else ""
 
     infix fun <T : Any?> T.eq(obj: Any?) =

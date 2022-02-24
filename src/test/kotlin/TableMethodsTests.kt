@@ -43,7 +43,9 @@ suspend inline fun FreeSpecContainerContext.tableMethodsTests() {
     "contains" {
         (defaultUsers[2] in usersTable) shouldBe true
         (defaultUsers in usersTable) shouldBe true
+
         (User(username = "Anonymous") in usersTable) shouldBe false
+        (defaultUsers[2].copy(enabled = false) in usersTable) shouldBe false
     }
 
     "all/any/none" {

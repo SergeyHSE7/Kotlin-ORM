@@ -49,7 +49,7 @@ private class UpdateStatement<out E : Entity>(
         database.executeSql(getSql().also { Logger.tag("UPDATE").info { it } })
     }
 
-    fun getSql(): String = "UPDATE ${table.tableName} " +
+    private fun getSql(): String = "UPDATE ${table.tableName} " +
             "SET " + columnValues.joinToString { it.first + " = " + it.second } +
             whereStatement.getSql()
 }

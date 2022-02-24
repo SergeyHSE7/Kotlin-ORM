@@ -22,28 +22,28 @@ fun config(func: Config.() -> Unit): Unit = Config.apply(func).run {
 }
 
 object Config {
-    internal var database: Database? = null
+    var database: Database? = null
 
-    internal var connectionAttemptsAmount: Int = 3
+    var connectionAttemptsAmount: Int = 3
 
-    internal var connectionAttemptsDelay: Long = 3000
+    var connectionAttemptsDelay: Long = 3000
 
-    internal var maxCacheSize: Int = 10
+    var maxCacheSize: Int = 10
 
-    internal var sequenceWindowSize: Int = 10
+    var sequenceWindowSize: Int = 10
 
-    internal var refreshTables: Boolean = false
+    var refreshTables: Boolean = false
 
-    internal var loadReferencesByDefault: Boolean = true
+    var loadReferencesByDefault: Boolean = true
 
-    internal var alwaysLoadReferencesWhenAddingEntity: Boolean = true
+    var alwaysLoadReferencesWhenAddingEntity: Boolean = true
 
-    internal var tables: () -> List<Table<*>> = { listOf() }
+    var tables: () -> List<Table<*>> = { listOf() }
 
     fun setTables(vararg tables: () -> Table<*>) {
         this.tables = { tables.map { it() } }
     }
 
-    internal var jsonFormat: JsonBuilder.() -> Unit = { }
+    var jsonFormat: JsonBuilder.() -> Unit = { }
 
 }

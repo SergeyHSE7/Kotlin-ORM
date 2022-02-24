@@ -25,7 +25,7 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
     fun getId(): Int? = getIds().firstOrNull()
     fun getIds(): List<Int> = getPreparedStatement().executeQuery().map { getInt("id").also { table.cache.remove(it) } }
 
-    private fun getEntity(): E {
+    fun getEntity(): E {
         getEntity = true
         return getPreparedStatement(listOf(entities.removeAt(0))).executeQuery()
             .getEntity(table, lazy = true).also { table.cache.add(it, withReferences = false) }

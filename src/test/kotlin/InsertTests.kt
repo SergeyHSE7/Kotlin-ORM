@@ -1,10 +1,11 @@
 import entities.Test
 import io.kotest.core.spec.style.scopes.FreeSpecContainerContext
 import io.kotest.matchers.shouldBe
+import java.util.*
 
 suspend inline fun FreeSpecContainerContext.insertTests() {
 
-    val newEntity = Test(uniqueValue = 5)
+    val newEntity = Test(uniqueValue = 5, calendarValue = Calendar.getInstance())
 
     "INSERT check" {
         (newEntity in Table<Test>()) shouldBe false

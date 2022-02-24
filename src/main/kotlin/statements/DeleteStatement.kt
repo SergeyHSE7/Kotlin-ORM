@@ -22,5 +22,5 @@ private class DeleteStatement<in E : Entity>(private val table: Table<E>) {
         database.executeSql(getSql().also { Logger.tag("DELETE").info { it } })
     }
 
-    fun getSql(): String = "DELETE FROM ${table.tableName}" + whereStatement.getSql()
+    private fun getSql(): String = "DELETE FROM ${table.tableName}" + whereStatement.getSql()
 }
