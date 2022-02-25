@@ -29,7 +29,7 @@ suspend inline fun FreeSpecContainerContext.whereTests() {
     }
 
     "ALL/ANY" {
-        if (database is SQLite) {
+        if (Config.database is SQLite) {
             shouldThrowAny { usersTable.first { User::age greaterEq all(User::age) }!!.age }
             shouldThrowAny { usersTable.count { User::age less any(User::age.subQuery { where { User::enabled eq false } }) } }
         } else {

@@ -9,7 +9,7 @@ import org.tinylog.Logger
 import utils.ifTrue
 
 
-fun <E : Entity> Table<E>.create() = CreateStatement(this).execute()
+internal fun <E : Entity> Table<E>.create() = CreateStatement(this).execute()
 
 private class CreateStatement<in E : Entity>(private val table: Table<E>) {
     private val maxLength = table.columns.maxOf { it.name.length }

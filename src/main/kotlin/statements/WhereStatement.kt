@@ -12,12 +12,12 @@ import sql_type_functions.SqlString
 import utils.toSql
 import kotlin.reflect.KMutableProperty1
 
+/** Condition that is cast to WHERE-clause expression. */
 typealias WhereCondition = WhereStatement.() -> Expression
 
 
 class Expression(val value: String = "", private val inverseValue: String = "", val isOR: Boolean = false) {
     operator fun not() = Expression(inverseValue, value)
-
     override fun toString() = value
     override fun equals(other: Any?) = other is Expression && value == other.value
     override fun hashCode() = value.hashCode()

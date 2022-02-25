@@ -13,6 +13,13 @@ import java.util.*
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 
+/**
+ * Represents a class for MariaDB database.
+ *
+ * @param[url] A database url of the form jdbc:mariadb:subname.
+ * @param[user] The database user on whose behalf the connection is being made.
+ * @param[password] The user's password to the database.
+ */
 class MariaDB(
     url: String,
     user: String,

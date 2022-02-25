@@ -13,6 +13,11 @@ import java.util.*
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 
+/**
+ * Represents a class for PostgreSQL database.
+ *
+ * @param[url] A database url of the form jdbc:sqlite:subname.
+ */
 class SQLite(
     url: String
 ) : Database(url, driver = "org.sqlite.JDBC") {

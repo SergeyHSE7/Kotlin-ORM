@@ -35,5 +35,5 @@ data class Test(
 
 val TestTable = table<Test, Database> {
     column(Test::uniqueValue).unique()
-    column(Test::calendarValue).sqlDefault(SqlDate.now())
+    column(Test::calendarValue).default(SqlDate.now())
 }

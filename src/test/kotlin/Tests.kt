@@ -2,7 +2,10 @@ import databases.MariaDB
 import databases.PostgreSQL
 import databases.SQLite
 import entities.*
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec
+import io.kotest.matchers.shouldBe
+import java.sql.SQLException
 
 class Tests : FreeSpec({
     val databases = listOf(
@@ -11,7 +14,7 @@ class Tests : FreeSpec({
         MariaDB(url = "jdbc:mariadb://localhost:3306/test_db", user = "root", password = "password")
     )
 
-    config {
+    with(Config) {
         refreshTables = true
         jsonFormat = {
             encodeDefaults = true
@@ -42,7 +45,19 @@ class Tests : FreeSpec({
 
             "Json Print" - { jsonPrintTests() }
 
-            "Table Operations" - { tableOperationsTests() }
+            "Table Operations" - {
+                val testTable = Table<Test>()
+                "Clear table" {
+                    testTable.clearTable()
+                    testTable.size shouldBe 0
+                }
+                "Drop table" {
+                    testTable.dropTable()
+                    shouldThrow<SQLException> {
+                        testTable.getAll()
+                    }
+                }
+            }
 
             Table.tables.clear()
             Column.columns.clear()

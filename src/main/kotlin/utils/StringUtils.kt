@@ -48,12 +48,12 @@ private fun List<String>.joinWithCase(case: Case): String = when (case) {
 private fun String.capitalize(): String =
     replaceFirstChar { it.uppercaseChar() }
 
-enum class Case {
+internal enum class Case {
     Normal, Pascal, Snake, Camel, Kebab
 }
 
 
-fun <T : Any?> T.toSql() = when (this) {
+internal fun <T : Any?> T.toSql() = when (this) {
     is Calendar -> "'${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SS").format(time)}'"
     is String, is Date, is Time, is Timestamp -> "'$this'"
     is Entity -> id.toString()

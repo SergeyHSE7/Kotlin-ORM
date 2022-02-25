@@ -13,6 +13,13 @@ import java.util.*
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 
+/**
+ * Represents a class for PostgreSQL database.
+ *
+ * @param[url] A database url of the form jdbc:postgresql:subname.
+ * @param[user] The database user on whose behalf the connection is being made.
+ * @param[password] The user's password to the database.
+ */
 class PostgreSQL(
     url: String,
     user: String,

@@ -7,7 +7,7 @@ import databases.PostgreSQL
 import org.tinylog.Logger
 import utils.ifTrue
 
-fun <E : Entity> Table<E>.drop() = DropStatement(this).execute().also { cache.clear() }
+internal fun <E : Entity> Table<E>.drop() = DropStatement(this).execute().also { cache.clear() }
 
 private class DropStatement<in E : Entity>(private val table: Table<E>) {
 

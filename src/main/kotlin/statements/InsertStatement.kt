@@ -19,9 +19,6 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
     private var getEntity = false
     private val entities: MutableList<E> = insertEntities.toMutableList()
 
-    fun add(objects: List<E>) = this.apply { entities.addAll(objects) }
-    fun add(vararg objects: E) = this.apply { entities.addAll(objects) }
-
     fun getId(): Int? = getIds().firstOrNull()
     fun getIds(): List<Int> = getPreparedStatement().executeQuery().map { getInt("id").also { table.cache.remove(it) } }
 
@@ -42,7 +39,7 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
         }.also { table.cache.addAll(it, withReferences = false) }
     }
 
-    fun getSql(preparedEntities: List<E> = entities): String =
+    private fun getSql(preparedEntities: List<E> = entities): String =
         "INSERT ${"IGNORE ".ifTrue(database is MariaDB)}INTO ${table.tableName} " +
                 "(${table.columns.filter { it.name != "id" }.joinToString { it.name }}) " +
                 "VALUES ${preparedEntities.joinToString { "(${props.joinToString { "?" }})" }} " +

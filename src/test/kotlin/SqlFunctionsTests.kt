@@ -16,7 +16,7 @@ suspend inline fun FreeSpecContainerContext.sqlFunctionsTests() {
         println(sqlTime)
         println(time)
 
-        abs(time - sqlTime) shouldBeLessThanOrEqualTo  2
+        abs(time - sqlTime) shouldBeLessThanOrEqualTo  5
     }
 
     "nowWithMs()" {
@@ -25,6 +25,6 @@ suspend inline fun FreeSpecContainerContext.sqlFunctionsTests() {
         println(sqlTime)
         println(time)
 
-        abs(time - sqlTime) shouldBeLessThan 2000
+        abs(time - sqlTime) shouldBeLessThan 5000
     }
 }

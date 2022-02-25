@@ -1,7 +1,7 @@
 package entities
 
-import Action
 import Entity
+import Reference
 import databases.Database
 import table
 import java.sql.Date
@@ -44,8 +44,8 @@ private val defaultEntities =
 
 
 val UserBooksTable = table<UserBook, Database> {
-    reference(UserBook::borrower, Action.Cascade)
-    reference(UserBook::book, Action.Cascade)
+    reference(UserBook::borrower, Reference.OnDelete.Cascade)
+    reference(UserBook::book, Reference.OnDelete.Cascade)
 
     defaultEntities(::defaultEntities)
 }

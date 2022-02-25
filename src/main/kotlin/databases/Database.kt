@@ -1,6 +1,5 @@
 package databases
 
-import Action
 import Column
 import Config
 import Entity
@@ -18,11 +17,18 @@ import java.sql.*
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
 
+/**
+ * Base class for databases.
+ *
+ * @param[url] A database url of the form jdbc:subprotocol:subname.
+ * @param[user] The database user on whose behalf the connection is being made.
+ * @param[password] The user's password to the database.
+ */
 sealed class Database(
     url: String,
     user: String? = null,
     password: String? = null,
-    driver: String = "org.postgresql.Driver",
+    driver: String,
 ) {
     internal val connection: Connection = run {
         var count = 0
@@ -44,6 +50,7 @@ sealed class Database(
 
     internal abstract val reservedKeyWords: List<String>
 
+    /** Gets the specified [sqlDate] from database. */
     fun select(sqlDate: SqlDate): Timestamp {
         val rs = database.executeQuery("SELECT $sqlDate").apply { next() }
         Logger.tag("SELECT").info { "SELECT $sqlDate" }
@@ -70,17 +77,19 @@ sealed class Database(
     internal abstract val defaultTypesMap: HashMap<KType, SqlType<*>>
     internal abstract fun <E : Entity> idColumn(table: Table<E>, prop: KMutableProperty1<E, Int>): Column<E, Int>
 
+    /** Adds specified entities to the table on its creation. */
     inline fun <reified E : Entity> defaultEntities(noinline entities: () -> List<E>) {
         Table<E>().defaultEntitiesMethod = entities
     }
 
     inline fun <reified E : Entity, T : Entity?> reference(
         prop: KMutableProperty1<E, T>,
-        onDelete: Action = Action.SetDefault
+        onDelete: Reference.OnDelete = Reference.OnDelete.SetDefault
     ) =
         Reference(Table(), prop, onDelete)
 
 
+    /** Marks the set of specified columns unique. */
     inline fun <reified E : Entity> uniqueColumns(vararg props: KMutableProperty1<E, *>) {
         Table<E>().uniqueProps.addAll(props)
     }

@@ -20,9 +20,13 @@ internal val KMutableProperty1<*, *>.column
 class Reference<E : Entity, P : Entity?>(
     table: Table<E>,
     property: KMutableProperty1<E, P>,
-    private val onDelete: Action
+    private val onDelete: OnDelete
 ) :
     Column<E, P>(table, property, database.defaultTypesMap[int4Type] as Database.SqlType<P>) {
+
+    enum class OnDelete {
+        Cascade, SetNull, SetDefault
+    }
 
     init {
         with(table) {
@@ -34,7 +38,7 @@ class Reference<E : Entity, P : Entity?>(
         }
     }
 
-    fun getForeignKey(): String = "FOREIGN KEY (${property.column.name}) REFERENCES " +
+    internal fun getForeignKey(): String = "FOREIGN KEY (${property.column.name}) REFERENCES " +
             "${
                 (property.returnType.javaType as Class<Entity>).kotlin.simpleName!!
                     .transformCase(Case.Pascal, Case.Snake, true)
@@ -56,9 +60,10 @@ fun <E : Entity, T> Table<E>.column(prop: KMutableProperty1<E, T>): Column<E, *>
     val sqlType = database.defaultTypesMap[prop.type] as Database.SqlType<T>?
 
     return if (sqlType != null) Column(this, prop, sqlType)
-    else Reference(this, prop as KMutableProperty1<E, Entity?>, Action.SetDefault)
+    else Reference(this, prop as KMutableProperty1<E, Entity?>, Reference.OnDelete.SetDefault)
 }
 
+/** Represents a database column for specified table and property. */
 open class Column<E : Entity, T>(
     table: Table<E>,
     internal val property: KMutableProperty1<E, T>,
@@ -79,7 +84,8 @@ open class Column<E : Entity, T>(
             property.isTypeOf(floatType) -> rs.getFloat(index)
             property.isTypeOf(int2Type) -> rs.getShort(index)
             else -> rs.getObject(index)
-        } as T }
+        } as T
+    }
 
     internal val setValue: (ps: PreparedStatement, index: Int, value: Any?) -> Unit =
         (sqlType.customSetValue ?: { ps, index, value ->
@@ -97,18 +103,27 @@ open class Column<E : Entity, T>(
         }
     }
 
+    /** Marks the database column as not null. */
     fun notNull() = this.also {
         isNotNull = true
         if (property.returnType.isMarkedNullable)
             Logger.warn { "Nullable value shouldn't be marked as not null! (column: $name)" }
     }
 
+    /** Marks the database column as unique. */
     fun unique() = this.also { isUnique = true }
-    internal fun primaryKey() = this.also { isPrimaryKey = true }
+
+    /** Sets the default value for the database column. */
     fun default(value: T) = this.also { defaultValue = value.toSql() }
-    fun <S:SqlBase> sqlDefault(sqlValue: S) = this.also { defaultValue = sqlValue.toSql() }
+
+    /** Sets the default value for the database column. */
+    fun <S : SqlBase> default(sqlValue: S) = this.also { defaultValue = sqlValue.toSql() }
+
+    /** Adds a new rule([condition]) that the values of the database column must match. */
     fun check(condition: WhereStatement.(KMutableProperty1<E, T>) -> Expression) =
         this.also { checkConditions.add { condition(property) } }
+
+    internal fun primaryKey() = this.also { isPrimaryKey = true }
 
     protected open fun attributesToSql(): String = "PRIMARY KEY ".ifTrue(isPrimaryKey) +
             "NOT NULL ".ifTrue(isNotNull) +
@@ -116,7 +131,7 @@ open class Column<E : Entity, T>(
             "DEFAULT $defaultValue".ifTrue(!isPrimaryKey && defaultValue != null)
 
 
-    fun toSql(nameLength: Int = name.length): String =
+    internal fun toSql(nameLength: Int = name.length): String =
         "${name.padEnd(nameLength)} ${sqlType.name.uppercase()} ${attributesToSql()}".trim()
 
     companion object {

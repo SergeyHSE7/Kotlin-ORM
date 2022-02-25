@@ -1,12 +1,10 @@
 package entities
 
-import Action
 import Entity
+import Reference
 import databases.Database
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import table
-import java.util.*
 
 @Serializable
 data class User(
@@ -30,7 +28,7 @@ private val defaultEntities = listOf(
     )
 
 val UsersTable = table<User, Database> {
-    reference(User::address, Action.SetNull)
+    reference(User::address, Reference.OnDelete.SetNull)
     check(User::age) { (it greaterEq 18) * (it less 80) }
     defaultEntities(::defaultEntities)
 }
