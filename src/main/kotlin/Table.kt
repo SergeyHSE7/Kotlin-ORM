@@ -19,17 +19,21 @@ import kotlin.reflect.full.createInstance
  *
  * @param[columnsBody] A function applied to the table to set constraints and/or additional rules for columns.
  */
-inline fun <reified E : Entity, DB : Database> table(noinline columnsBody: DB.() -> Unit = {}): Table<E> =
-    Table(E::class, columnsBody as Database.() -> Unit)
+inline fun <reified E : Entity, DB : Database> table(
+    tableName: String? = null,
+    noinline columnsBody: DB.() -> Unit = {}
+): Table<E> =
+    Table(tableName, E::class, columnsBody as Database.() -> Unit)
 
 
 /** Represents a table for specified entity class. */
 class Table<E : Entity>(
+    tableName: String?,
     val entityClass: KClass<E>,
     private val columnsBody: Database.() -> Unit
 ) {
     /** Name of the created table. */
-    val tableName = entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
+    val tableName = tableName ?: entityClass.simpleName!!.transformCase(Case.Pascal, Case.Snake, true)
 
     /** Entities that are always added after the table creation. */
     val defaultEntities by lazy { defaultEntitiesMethod() }
@@ -71,15 +75,13 @@ class Table<E : Entity>(
 
     // -------------------------------- Table operations ---------------------------------------------------------------
 
-    internal fun createTable() {
+    internal fun initTable() {
         if (tableName in database.reservedKeyWords)
             throw LoggerException("\"$tableName\" is a reserved SQL keyword!")
 
         tables[entityClass] = this
         database.columnsBody()
         entityClass.properties.forEach { column(it as KMutableProperty1<E, Any?>) }
-
-        create()
     }
 
     internal fun dropTable() = drop().also {

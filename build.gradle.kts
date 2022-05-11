@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     `maven-publish`
     application
-    kotlin("jvm") version "1.5.21"
-    kotlin("plugin.serialization") version "1.5.21"
+    kotlin("jvm") version "1.6.20"
+    kotlin("plugin.serialization") version "1.6.20"
     id("org.jetbrains.dokka") version "1.6.10"
 }
 apply(plugin = "maven-publish")
@@ -45,9 +45,15 @@ publishing {
 }
 
 tasks.withType<Test> {
-    dependsOn("createPostgresDB", "createMariaDB")
+    dependsOn(
+        //"createPostgresDB",
+        //"createMariaDB"
+    )
     useJUnitPlatform()
-    finalizedBy("deletePostgresDB", "deleteMariaDB")
+    finalizedBy(
+        //"deletePostgresDB",
+        //"deleteMariaDB"
+    )
 }
 
 task<Exec>("createPostgresDB") {

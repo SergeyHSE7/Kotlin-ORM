@@ -16,13 +16,17 @@ abstract class Entity {
         Table[this::class] ?: throw LoggerException("Table for entity ${this::class} is not initialized")
     }
 
-    /** Compare all values (except id) with [other] entity. */
+    /** Compares all values (except id) with [other] entity. */
     fun compareValuesWith(other: Entity): Boolean =
         properties.all { prop ->
             prop.name == "id" || prop.getter.call(this).run {
                 if (this is Entity) id == (prop.getter.call(other) as Entity).id else this == prop.getter.call(other)
             }
         }
+
+    /** Property delegate for One-To-One connection via specified key-property. */
+    inline fun <reified E:Entity> oneToOne(keyProp: KMutableProperty1<E, *>) =
+        ReadOnlyProperty<Any?, E?> { _, _ -> Table<E>().first { keyProp eq id } }
 
     /** Property delegate for One-To-Many connection via specified key-property. */
     inline fun <reified E : Entity> oneToMany(keyProp: KMutableProperty1<E, *>) =
@@ -38,20 +42,20 @@ abstract class Entity {
         }
 }
 
-/** Load all references for current entity. */
+/** Loads all references for current entity. */
 fun <E : Entity?> E.loadReferences(): E? = if (this == null) null else table.findById(id, loadReferences = true) as E?
 internal fun <E : Entity?> E.loadReferencesIf(condition: Boolean): E? =
     if (condition) this.loadReferences() else this
 
-/** Add the current entity to database by its id. */
+/** Adds the current entity to database. */
 fun <E : Entity?> E.save(): E? = if (this == null) null else table.add(this) as E?
 
-/** Add current entities to database by its ids. */
+/** Adds current entities to database by its ids. */
 fun <E : Entity?> List<E>.save(): List<E> =
     firstOrNull()?.let { it.table.add(this.filterNotNull()) as List<E> } ?: listOf()
 
 /**
- * Update the current entity in database by its id.
+ * Updates the current entity in database by its id.
  *
  * @param[props] The properties of entity to update.
  * (if none are specified then all properties of the entity are updated).
@@ -62,7 +66,7 @@ inline fun <U : E?, reified E : Entity> U.update(vararg props: KMutableProperty1
     Table<E>().update(this, props.toList())
 }
 
-/** Delete the current entity in database by its id. */
+/** Deletes the current entity in database by its id. */
 fun <E : Entity?> E.delete() {
     if (this != null) table.delete(this)
 }

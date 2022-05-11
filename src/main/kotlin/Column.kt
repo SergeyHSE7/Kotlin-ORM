@@ -39,10 +39,7 @@ class Reference<E : Entity, P : Entity?>(
     }
 
     internal fun getForeignKey(): String = "FOREIGN KEY (${property.column.name}) REFERENCES " +
-            "${
-                (property.returnType.javaType as Class<Entity>).kotlin.simpleName!!
-                    .transformCase(Case.Pascal, Case.Snake, true)
-            }(id) " +
+            "${Table[(property.returnType.javaType as Class<Entity>).kotlin]!!.tableName}(id) " +
             "ON DELETE ${onDelete.name.transformCase(Case.Pascal, Case.Normal).uppercase()}"
 }
 
@@ -70,9 +67,9 @@ open class Column<E : Entity, T>(
     private val sqlType: Database.SqlType<T>
 ) {
     internal val refTable by lazy { Table[(property.returnType.javaType as Class<Entity>).kotlin] }
-    internal val name: String = property.name.transformCase(Case.Camel, Case.Snake)
+    internal var name: String = property.name.transformCase(Case.Camel, Case.Snake)
     internal val tableName: String = table.tableName
-    internal val fullName: String = "$tableName.$name"
+    internal val fullName: String get() = "$tableName.$name"
     private var defaultValue: String? = property.get(table.defaultEntity).toSql()
     private var isNotNull = false
     private var isUnique = false
@@ -101,6 +98,13 @@ open class Column<E : Entity, T>(
             if (!property.returnType.isMarkedNullable)
                 isNotNull = true
         }
+    }
+
+    /** Sets the custom name for the database table */
+    fun name(columnName: String) = this.also {
+        if (name in database.reservedKeyWords)
+            throw LoggerException("\"$name\" is a reserved SQL keyword!")
+        it.name = columnName
     }
 
     /** Marks the database column as not null. */

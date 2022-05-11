@@ -2,6 +2,7 @@ import databases.Database
 import databases.SQLite
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonBuilder
+import statements.create
 
 
 internal val database: Database
@@ -16,7 +17,8 @@ fun config(func: Config.() -> Unit): Unit = Config.apply(func).run {
     alwaysLoadReferencesWhenAddingEntity = false
     with(tables()) {
         if (refreshTables) forEach(Table<*>::dropTable)
-        forEach(Table<*>::createTable)
+        forEach(Table<*>::initTable)
+        forEach(Table<*>::create)
         forEach { it.defaultEntities.save() }
         forEach { it.referencesAddMethods.forEach { it() } }
     }

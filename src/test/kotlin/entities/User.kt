@@ -2,6 +2,7 @@ package entities
 
 import Entity
 import Reference
+import column
 import databases.Database
 import kotlinx.serialization.Serializable
 import table
@@ -27,7 +28,8 @@ private val defaultEntities = listOf(
         User(username = "Simon", address = Address(4), enabled = false, age = 34),
     )
 
-val UsersTable = table<User, Database> {
+val UsersTable = table<User, Database>("my_users") {
+    column(User::username).name("name")
     reference(User::address, Reference.OnDelete.SetNull)
     check(User::age) { (it greaterEq 18) * (it less 80) }
     defaultEntities(::defaultEntities)
