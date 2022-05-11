@@ -4,6 +4,8 @@ import Column
 import Entity
 import Table
 import column
+import statements.DropStatement
+import statements.SelectStatement
 import utils.*
 import java.math.BigDecimal
 import java.sql.Date
@@ -28,7 +30,6 @@ class PostgreSQL(
     override val reservedKeyWords: List<String> =
         "all,analyse,analyze,and,any,array,as,asc,asymmetric,both,case,cast,check,collate,column,constraint,create,current_catalog,current_date,current_role,current_time,current_timestamp,current_user,default,deferrable,desc,distinct,do,else,end,except,false,fetch,for,foreign,from,grant,group,having,in,initially,intersect,into,lateral,leading,limit,localtime,localtimestamp,not,null,offset,on,only,or,order,placing,primary,references,returning,select,session_user,some,symmetric,table,then,to,trailing,true,union,unique,user,using,variadic,when,where,window,with"
             .split(',')
-
 
     override val defaultTypesMap: HashMap<KType, SqlType<*>> = hashMapOf(
         boolType to SqlType<Boolean>("boolean"),
@@ -82,4 +83,17 @@ class PostgreSQL(
         withTimeZone: Boolean = false
     ) =
         column(prop, "timestamp" + " with time zone".ifTrue(withTimeZone))
+
+
+    override val dropStatementSql: DropStatement<*>.() -> String =
+        { "DROP TABLE IF EXISTS ${table.tableName} CASCADE" }
+
+    override val selectStatementSql: SelectStatement<*>.() -> String = {
+        "SELECT${getSelectValues()} FROM ${table.tableName}" +
+                joinTables.joinToString("") +
+                (groupColumn ?: "") +
+                whereStatement.getSql() +
+                (" ORDER BY " + orderColumns.joinToString()).ifTrue(orderColumns.isNotEmpty()) +
+                " LIMIT $limit".ifTrue(limit != null) + " OFFSET $offset".ifTrue(offset != 0)
+    }
 }

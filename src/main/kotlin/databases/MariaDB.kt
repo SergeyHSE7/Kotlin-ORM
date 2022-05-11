@@ -2,7 +2,11 @@ package databases
 
 import Column
 import Entity
+import Reference
 import Table
+import statements.AlterStatement
+import statements.InsertStatement
+import statements.SelectStatement
 import utils.*
 import java.math.BigDecimal
 import java.sql.Date
@@ -58,4 +62,23 @@ class MariaDB(
     override fun <E : Entity> idColumn(table: Table<E>, prop: KMutableProperty1<E, Int>): Column<E, Int> =
         Column(table, prop, SqlType("int auto_increment")).primaryKey()
 
+    override val alterStatementSql: AlterStatement<*>.(reference: Reference<*, *>) -> String = {
+        "ALTER TABLE ${table.tableName} ADD CONSTRAINT ${it.getForeignKey()}"
+    }
+    override val insertStatementSql: InsertStatement<*>.(preparedEntities: List<*>) -> String = {
+        "INSERT IGNORE INTO ${table.tableName} " +
+                "(${table.columns.filter { it.name != "id" }.joinToString { it.name }}) " +
+                "VALUES ${it.joinToString { "(${props.joinToString { "?" }})" }} " +
+                "RETURNING ${if (getEntity) "*" else "id"}"
+    }
+
+    override val selectStatementSql: SelectStatement<*>.() -> String = {
+        "SELECT${getSelectValues()} FROM ${table.tableName}" +
+                joinTables.joinToString("") +
+                (groupColumn ?: "") +
+                whereStatement.getSql() +
+                (" ORDER BY " + orderColumns.joinToString()).ifTrue(orderColumns.isNotEmpty()) +
+                if (offset != 0) " LIMIT ${limit ?: (table.size - offset)} OFFSET $offset"
+                else " LIMIT $limit".ifTrue(limit != null)
+    }
 }

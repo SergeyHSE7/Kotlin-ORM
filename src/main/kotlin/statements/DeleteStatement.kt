@@ -15,14 +15,12 @@ fun <E : Entity> Table<E>.deleteById(id: Int) =
         .also { cache.remove(id) }
 
 
-private class DeleteStatement<in E : Entity>(private val table: Table<E>) {
-    private var whereStatement: WhereStatement = WhereStatement()
+internal class DeleteStatement<E : Entity>(val table: Table<E>) {
+    var whereStatement: WhereStatement = WhereStatement()
 
     fun where(conditionBody: WhereCondition?) = this.apply { if (conditionBody != null) whereStatement = WhereStatement(conditionBody) }
 
-    fun execute() {
-        database.executeSql(getSql().also { Logger.tag("DELETE").info { it } })
+    fun execute() = with(database) {
+        executeSql(deleteStatementSql().also { Logger.tag("DELETE").info { it } })
     }
-
-    private fun getSql(): String = "DELETE FROM ${table.tableName}" + whereStatement.getSql()
 }

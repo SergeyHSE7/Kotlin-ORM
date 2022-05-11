@@ -5,9 +5,7 @@ import Entity
 import Table
 import column
 import database
-import databases.MariaDB
 import databases.PostgreSQL
-import databases.SQLite
 import org.tinylog.Logger
 import sql_type_functions.SqlList
 import sql_type_functions.SqlNumber
@@ -37,18 +35,18 @@ fun <E : Entity> Table<E>.select(vararg props: KMutableProperty1<*, *>): SelectS
 
 
 class SelectStatement<E : Entity>(
-    private val table: Table<E>,
+    val table: Table<E>,
     columns: List<String> = listOf(),
     private val selectAll: Boolean = false
 ) {
     private var lazy: Boolean = !Config.loadReferencesByDefault
-    private var limit: Int? = null
-    private var offset: Int = 0
-    private val joinTables = mutableSetOf<String>()
+    var limit: Int? = null
+    var offset: Int = 0
+    val joinTables = mutableSetOf<String>()
     private val columns = columns.toMutableSet()
-    private val orderColumns = mutableSetOf<OrderColumn>()
-    private var groupColumn: GroupBy? = null
-    private var whereStatement: WhereStatement = WhereStatement()
+    internal val orderColumns = mutableSetOf<OrderColumn>()
+    internal var groupColumn: GroupBy? = null
+    var whereStatement: WhereStatement = WhereStatement()
 
     fun where(conditionBody: WhereCondition?) =
         this.apply { if (conditionBody != null) whereStatement.addCondition(conditionBody) }
@@ -138,27 +136,11 @@ class SelectStatement<E : Entity>(
     }
 
 
-    private fun getSelectValues() = if (selectAll) " *"
+    fun getSelectValues() = if (selectAll) " *"
     else if (columns.size > 0) columns.joinToString(prefix = " ")
     else " id".ifTrue(database !is PostgreSQL)
 
-    fun getSql(): String =
-        "SELECT${getSelectValues()} FROM ${table.tableName}" +
-                joinTables.joinToString("") +
-                (if (groupColumn != null) groupColumn else "") +
-                whereStatement.getSql() +
-                (" ORDER BY " + orderColumns.joinToString()).ifTrue(orderColumns.isNotEmpty()) +
-                when (database) {
-                    is PostgreSQL ->
-                        " LIMIT $limit".ifTrue(limit != null) + " OFFSET $offset".ifTrue(offset != 0)
-                    is SQLite ->
-                        if (offset != 0) " LIMIT ${limit ?: -1} OFFSET $offset"
-                        else " LIMIT $limit".ifTrue(limit != null)
-                    is MariaDB ->
-                        if (offset != 0) " LIMIT ${limit ?: (table.size - offset)} OFFSET $offset"
-                        else " LIMIT $limit".ifTrue(limit != null)
-                    else -> ""
-                }
+    fun getSql(): String = database.selectStatementSql(this)
 
 }
 

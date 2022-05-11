@@ -5,12 +5,12 @@ import Config
 import Entity
 import Reference
 import Table
+import column
 import database
 import org.tinylog.Logger
 import sql_type_functions.SqlDate
-import statements.Expression
-import statements.WhereCondition
-import statements.WhereStatement
+import statements.*
+import utils.ifTrue
 import utils.timestampType
 import java.lang.Thread.sleep
 import java.sql.*
@@ -49,6 +49,36 @@ sealed class Database(
     }
 
     internal abstract val reservedKeyWords: List<String>
+
+    internal open val updateStatementSql: UpdateStatement<*>.() -> String = {
+        "UPDATE ${table.tableName} " +
+                "SET " + columnValues.joinToString { it.first + " = " + it.second } +
+                whereStatement.getSql()
+    }
+    internal abstract val selectStatementSql: SelectStatement<*>.() -> String
+    internal open val insertStatementSql: InsertStatement<*>.(preparedEntities: List<*>) -> String = {
+        "INSERT INTO ${table.tableName} " +
+                "(${table.columns.filter { it.name != "id" }.joinToString { it.name }}) " +
+                "VALUES ${it.joinToString { "(${props.joinToString { "?" }})" }} " +
+                "ON CONFLICT DO NOTHING " +
+                "RETURNING ${if (getEntity) "*" else "id"}"
+    }
+    internal open val dropStatementSql: DropStatement<*>.() -> String =
+        { "DROP TABLE IF EXISTS ${table.tableName}" }
+    internal open val deleteStatementSql: DeleteStatement<*>.() -> String =
+        { "DELETE FROM ${table.tableName}" + whereStatement.getSql() }
+    internal open val alterStatementSql: AlterStatement<*>.(reference: Reference<*, *>) -> String =
+        { "ALTER TABLE ${table.tableName} ADD ${it.getForeignKey()}" }
+    internal open val createStatementSql: CreateStatement<*>.() -> String = {
+        "CREATE TABLE IF NOT EXISTS ${table.tableName}\n(" +
+                table.columns.joinToString(",\n") {
+                    "\t" + it.toSql(maxLength)
+                } +
+                table.checkConditions.joinToString("") { ",\nCHECK (${it(WhereStatement())})" } +
+                ",\nCONSTRAINT ${table.tableName}_unique_columns UNIQUE (${table.uniqueProps.joinToString { it.column.name }})"
+                    .ifTrue(table.uniqueProps.isNotEmpty()) +
+                "\n)"
+    }
 
     /** Gets the specified [sqlDate] from database. */
     fun select(sqlDate: SqlDate): Timestamp {

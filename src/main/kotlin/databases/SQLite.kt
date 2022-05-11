@@ -3,6 +3,10 @@ package databases
 import Column
 import Entity
 import Table
+import column
+import statements.CreateStatement
+import statements.SelectStatement
+import statements.WhereStatement
 import utils.*
 import java.math.BigDecimal
 import java.sql.Date
@@ -62,4 +66,27 @@ class SQLite(
 
     override fun <E : Entity> idColumn(table: Table<E>, prop: KMutableProperty1<E, Int>): Column<E, Int> =
         Column(table, prop, SqlType("integer")).primaryKey()
+
+    override val createStatementSql: CreateStatement<*>.() -> String = {
+        "CREATE TABLE IF NOT EXISTS ${table.tableName}\n(" +
+                table.columns.joinToString(",\n") {
+                    "\t" + it.toSql(maxLength)
+                } +
+                table.references.joinToString(",\n\t", prefix = ",\n\t") { it.getForeignKey() }
+                    .ifTrue(table.references.isNotEmpty()) +
+                table.checkConditions.joinToString("") { ",\nCHECK (${it(WhereStatement())})" } +
+                ",\nCONSTRAINT ${table.tableName}_unique_columns UNIQUE (${table.uniqueProps.joinToString { it.column.name }})"
+                    .ifTrue(table.uniqueProps.isNotEmpty()) +
+                "\n)"
+    }
+
+    override val selectStatementSql: SelectStatement<*>.() -> String = {
+        "SELECT${getSelectValues()} FROM ${table.tableName}" +
+                joinTables.joinToString("") +
+                (groupColumn ?: "") +
+                whereStatement.getSql() +
+                (" ORDER BY " + orderColumns.joinToString()).ifTrue(orderColumns.isNotEmpty()) +
+                if (offset != 0) " LIMIT ${limit ?: -1} OFFSET $offset"
+                else " LIMIT $limit".ifTrue(limit != null)
+    }
 }

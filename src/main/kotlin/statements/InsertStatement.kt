@@ -4,19 +4,17 @@ import Entity
 import Table
 import column
 import database
-import databases.MariaDB
 import org.tinylog.Logger
 import utils.getEntity
-import utils.ifTrue
 import utils.map
 import java.sql.PreparedStatement
 
 fun <E : Entity> Table<E>.insert(vararg insertEntities: E) = insert(insertEntities.toList())
 fun <E : Entity> Table<E>.insert(insertEntities: List<E>) = InsertStatement(this, insertEntities)
 
-class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: List<E> = listOf()) {
-    private val props = table.columns.map { it.property }.filter { it.name != "id" }
-    private var getEntity = false
+class InsertStatement<E : Entity>(val table: Table<E>, insertEntities: List<E> = listOf()) {
+    val props = table.columns.map { it.property }.filter { it.name != "id" }
+    var getEntity = false
     private val entities: MutableList<E> = insertEntities.toMutableList()
 
     fun getId(): Int? = getIds().firstOrNull()
@@ -39,16 +37,8 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
         }.also { table.cache.addAll(it, withReferences = false) }
     }
 
-    private fun getSql(preparedEntities: List<E> = entities): String =
-        "INSERT ${"IGNORE ".ifTrue(database is MariaDB)}INTO ${table.tableName} " +
-                "(${table.columns.filter { it.name != "id" }.joinToString { it.name }}) " +
-                "VALUES ${preparedEntities.joinToString { "(${props.joinToString { "?" }})" }} " +
-                "ON CONFLICT DO NOTHING ".ifTrue(database !is MariaDB) +
-                "RETURNING ${if (getEntity) "*" else "id"}"
-
-    private fun getPreparedStatement(preparedEntities: List<E> = entities): PreparedStatement =
-        database.connection.prepareStatement(getSql(preparedEntities))
-            .apply {
+    private fun getPreparedStatement(preparedEntities: List<E> = entities): PreparedStatement = with(database) {
+        connection.prepareStatement(insertStatementSql(preparedEntities)).apply {
                 entities.flatMap { entity ->
                     props.map { prop ->
                         prop.column to (when (val value = prop.get(entity)) {
@@ -59,4 +49,5 @@ class InsertStatement<E : Entity>(private val table: Table<E>, insertEntities: L
                 }.forEachIndexed { index, (column, value) -> column.setValue(this, index + 1, value) }
                 Logger.tag("INSERT").info { toString() }
             }
+    }
 }

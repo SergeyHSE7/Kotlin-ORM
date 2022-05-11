@@ -19,12 +19,12 @@ fun <E : Entity> Table<out E>.update(entity: E, props: List<KMutableProperty1<E,
     UpdateStatement(this, entity, props).where { Expression("id = ${entity.id}") }.execute()
         .also { cache.remove(entity.id) }
 
-private class UpdateStatement<out E : Entity>(
-    private val table: Table<out E>,
+internal class UpdateStatement<out E : Entity>(
+    val table: Table<out E>,
     private val entity: E,
     private val props: List<KMutableProperty1<E, *>> = listOf()
 ) {
-    private val columnValues: MutableList<Pair<String, String>> = props.ifEmpty { entity.properties }
+    val columnValues: MutableList<Pair<String, String>> = props.ifEmpty { entity.properties }
         .filter { it.column.name != "id" }
         .map { prop -> prop.column.name to prop.getter.call(entity).toSql()
         }.toMutableList()
@@ -43,16 +43,13 @@ private class UpdateStatement<out E : Entity>(
             }
     }
 
-    private var whereStatement: WhereStatement = WhereStatement()
+    var whereStatement: WhereStatement = WhereStatement()
 
     fun where(conditionBody: WhereCondition?) = this.apply { if (conditionBody != null) whereStatement = WhereStatement(conditionBody) }
 
-    fun execute() {
+    fun execute() = with(database) {
         updateReferences()
-        database.executeSql(getSql().also { Logger.tag("UPDATE").info { it } })
+        executeSql(updateStatementSql().also { Logger.tag("UPDATE").info { it } })
     }
 
-    private fun getSql(): String = "UPDATE ${table.tableName} " +
-            "SET " + columnValues.joinToString { it.first + " = " + it.second } +
-            whereStatement.getSql()
 }
