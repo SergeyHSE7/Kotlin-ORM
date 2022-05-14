@@ -7,6 +7,10 @@ import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.*
 import kotlin.reflect.KMutableProperty1
 
@@ -55,7 +59,9 @@ internal enum class Case {
 
 internal fun <T : Any?> T.toSql() = when (this) {
     is Calendar -> "'${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SS").format(time)}'"
-    is String, is Date, is Time, is Timestamp -> "'$this'"
+    is Instant -> "'${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SS").format(Timestamp(toEpochMilli()))}'"
+    is String, is Date, is Time, is Timestamp, is LocalDate, is LocalDateTime, is LocalTime,
+    is kotlinx.datetime.LocalDate, is kotlinx.datetime.LocalDateTime, is kotlinx.datetime.Instant -> "'$this'"
     is Entity -> id.toString()
     is List<Any?> -> joinToString(", ", "(", ")") { if (it is String) "'$it'" else it.toString() }
     is KMutableProperty1<*, *> -> column.fullName

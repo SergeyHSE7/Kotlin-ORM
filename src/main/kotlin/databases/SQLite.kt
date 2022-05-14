@@ -13,6 +13,10 @@ import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.*
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
@@ -45,19 +49,44 @@ class SQLite(
         dateType to SqlType<Date>("text",
             customGetValue = { rs, name -> Date.valueOf(rs.getString(name)) },
             customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
+        localDateType to SqlType<LocalDate>("text",
+            customGetValue = { rs, name -> LocalDate.parse(rs.getString(name)) },
+            customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
+        ktLocalDateType to SqlType("text",
+            customGetValue = { rs, name -> kotlinx.datetime.LocalDate.parse(rs.getString(name)) },
+            customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
         calendarType to SqlType<Calendar>("text",
             customGetValue = { rs, name ->
                 Calendar.getInstance()
-                    .apply { time = SimpleDateFormat("YYYY-MM-dd HH:mm:ss.SSS").parse(rs.getString(name)) }
+                    .apply { timeInMillis = Timestamp.valueOf(rs.getString(name)).time }
             },
             customSetValue = { ps, index, value ->
                 ps.setString(index, SimpleDateFormat("YYYY-MM-dd HH:mm:ss.SSS").format(value.time))
             }),
+        instantType to SqlType<Instant>("text",
+            customGetValue = { rs, name -> Instant.ofEpochMilli(Timestamp.valueOf(rs.getString(name)).time) },
+            customSetValue = { ps, index, value ->
+                ps.setString(index, SimpleDateFormat("YYYY-MM-dd HH:mm:ss.SSS").format(Timestamp(value.toEpochMilli())))
+            }),
+        ktInstantType to SqlType("text",
+            customGetValue = { rs, name -> kotlinx.datetime.Instant.parse(rs.getString(name)) },
+            customSetValue = { ps, index, value ->
+                ps.setString(index, value.toString())
+            }),
         timeType to SqlType<Time>("text",
             customGetValue = { rs, name -> Time.valueOf(rs.getString(name)) },
             customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
+        localTimeType to SqlType<LocalTime>("text",
+            customGetValue = { rs, name -> LocalTime.parse(rs.getString(name)) },
+            customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
         timestampType to SqlType<Timestamp>("text",
             customGetValue = { rs, name -> Timestamp.valueOf(rs.getString(name)) },
+            customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
+        localDateTimeType to SqlType<LocalDateTime>("text",
+            customGetValue = { rs, name -> LocalDateTime.parse(rs.getString(name)) },
+            customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
+        ktLocalDateTimeType to SqlType("text",
+            customGetValue = { rs, name -> kotlinx.datetime.LocalDateTime.parse(rs.getString(name)) },
             customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
         decimalType to SqlType("text",
             customGetValue = { rs, name -> BigDecimal(rs.getString(name)) },

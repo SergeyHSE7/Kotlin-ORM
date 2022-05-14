@@ -45,6 +45,27 @@ class Tests : FreeSpec({
 
             "Json Print" - { jsonPrintTests() }
 
+            "Date Types" - {
+                val tests = Table<Test>()
+                val test = tests.first()!!
+
+                println("\njava.sql:")
+                println(test.timestampValue)
+                println(test.dateValue)
+                println(test.timeValue)
+
+                println("\njava.util:")
+                println(test.calendarValue.time)
+                println(test.instantValue)
+                println(test.localDateTimeValue)
+                println(test.localDateValue)
+                println(test.localTimeValue)
+
+                println("\nkotlinx.datetime:")
+                println(test.ktInstantValue)
+                println(test.ktLocalDateTimeValue)
+                println(test.ktLocalDateValue)
+            }
             "Table Operations" - {
                 val testTable = Table<Test>()
                 "Clear table" {
