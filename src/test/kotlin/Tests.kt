@@ -2,9 +2,12 @@ import databases.MariaDB
 import databases.PostgreSQL
 import databases.SQLite
 import entities.*
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import statements.delete
 import java.sql.SQLException
 
 class Tests : FreeSpec({
@@ -28,7 +31,8 @@ class Tests : FreeSpec({
             "Generate tables" {
                 config {
                     this.database = database
-                    setTables(::UserBooksTable, ::UsersTable, ::AddressesTable, ::BooksTable, ::TestTable)
+                    setTables(::UserBooksTable, ::UsersTable, ::AddressesTable,
+                        ::BooksTable, ::TestTable, ::customTable)
                 }
             }
             "SQL Functions" - { sqlFunctionsTests() }
@@ -45,27 +49,24 @@ class Tests : FreeSpec({
 
             "Json Print" - { jsonPrintTests() }
 
-            "Date Types" - {
-                val tests = Table<Test>()
-                val test = tests.first()!!
 
-                println("\njava.sql:")
-                println(test.timestampValue)
-                println(test.dateValue)
-                println(test.timeValue)
+            "Custom names" {
+                customTable.tableName shouldBe "table_with_custom_name"
+                customTable.columns.firstOrNull { it.name == "column_with_custom_name" }.shouldNotBeNull()
 
-                println("\njava.util:")
-                println(test.calendarValue.time)
-                println(test.instantValue)
-                println(test.localDateTimeValue)
-                println(test.localDateValue)
-                println(test.localTimeValue)
-
-                println("\nkotlinx.datetime:")
-                println(test.ktInstantValue)
-                println(test.ktLocalDateTimeValue)
-                println(test.ktLocalDateValue)
+                shouldNotThrowAny {
+                    val entity = customTable[1]!!
+                    entity.field shouldBe "value"
+                    entity.update {
+                        field = "new_value"
+                    }
+                    customTable.delete { CustomTable::field eq "new_value" }
+                    customTable.size shouldBe 0
+                }
             }
+
+            "Types" - { typeTests() }
+
             "Table Operations" - {
                 val testTable = Table<Test>()
                 "Clear table" {
