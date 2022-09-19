@@ -11,6 +11,8 @@ import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.*
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KType
@@ -39,6 +41,12 @@ class PostgreSQL(
         timeType to SqlType<Time>("time"),
         timestampType to SqlType<Timestamp>("timestamp"),
         dateType to SqlType<Date>("date"),
+        localDateType to SqlType<LocalDate>("text",
+            customGetValue = { rs, name -> LocalDate.parse(rs.getString(name)) },
+            customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
+        localDateTimeType to SqlType<LocalDateTime>("text",
+            customGetValue = { rs, name -> LocalDateTime.parse(rs.getString(name)) },
+            customSetValue = { ps, index, value -> ps.setString(index, value.toString()) }),
         calendarType to SqlType<Calendar>("date",
             customSetValue = { ps, index, value -> ps.setDate(index, Date(value.timeInMillis)) },
             customGetValue = { rs, name -> Calendar.getInstance().apply { time = rs.getDate(name) } }),
